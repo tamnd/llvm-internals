@@ -55,6 +55,48 @@ jobs:
       - name: diagrams are up to date
         run: git diff --exit-code -- docs/diagrams
 
+  # The toolkit against a real LLVM. Half of irx is about what happens when a
+  # tool fails or the version is wrong, and none of that is worth testing with a
+  # mock, so this job installs the pinned major version and runs the binaries.
+  # The version comes out of docs/pin.json rather than being typed here, so
+  # moving the pin moves this job with it.
+  toolkit:
+    name: irx against a real LLVM
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      - name: install the pinned LLVM
+        run: |
+          set -euo pipefail
+          major=$(python3 -c 'import json; print(json.load(open("docs/pin.json"))["tag"].removeprefix("llvmorg-").split(".")[0])')
+          codename=$(lsb_release -cs)
+          echo "IRX_LLVM_BIN=/usr/lib/llvm-$major/bin" >> "$GITHUB_ENV"
+          wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key \
+            | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc > /dev/null
+          echo "deb http://apt.llvm.org/$codename/ llvm-toolchain-$codename-$major main" \
+            | sudo tee /etc/apt/sources.list.d/llvm.list > /dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends "clang-$major" "llvm-$major"
+      - name: the pin and the toolkit copy of it agree
+        run: python3 -m unittest tests.test_pin -v
+      # A skip would mean the install above quietly did not work, and the suite
+      # would sit there green while testing none of the interesting half, so a
+      # skip fails the job.
+      - name: run the toolkit tests, and insist none of them skip
+        working-directory: toolkit
+        run: |
+          set -euo pipefail
+          python3 -m unittest discover -s tests -t . -v 2>&1 | tee "$RUNNER_TEMP/result.txt"
+          if grep -q "skipped" "$RUNNER_TEMP/result.txt"; then
+            echo "Something skipped, which means the pinned LLVM is not really there."
+            exit 1
+          fi
+
   # Workflow files get the same treatment as everything else here. actionlint
   # catches the shell and expression mistakes, zizmor catches the security ones,
   # and the reason both run is that a workflow is the part of a repository
