@@ -1,0 +1,6 @@
+{
+  "tag": "llvmorg-23.1.0",
+  "released": "2026-08-25",
+  "citation_suffix": "@llvmorg-23.1.0",
+  "note": "Every claim, citation and shipped toolchain in this repository is written against this tag. Moving it is a milestone, not a commit. See ROADMAP.md, M6."
+}

@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "irx"
+version = "0.1.0"
+description = "The runtime helper for the llvm-internals lessons. Finds a pinned LLVM, runs it, renders what it printed."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0 WITH LLVM-exception"
+authors = [{ name = "tamnd" }]
+keywords = ["llvm", "compiler", "teaching", "notebook"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Education",
+  "Programming Language :: Python :: 3",
+  "Topic :: Software Development :: Compilers",
+]
+
+# No runtime dependencies, and that is a decision rather than an accident. This
+# package is pip installed inside a Colab cell before anything else happens, so
+# every dependency is wall clock time a reader spends watching a progress bar,
+# and every version pin is a chance to fight with whatever Colab already has.
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.urls]
+Homepage = "https://github.com/tamnd/llvm-internals"
+Issues = "https://github.com/tamnd/llvm-internals/issues"
+
+[tool.setuptools]
+packages = ["irx"]
+
+[tool.setuptools.package-data]
+irx = ["pin.json"]
