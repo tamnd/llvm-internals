@@ -334,9 +334,12 @@ class TestAgainstRealLLVM(unittest.TestCase):
         self.assertIn("irx.passes()", str(caught.exception))
 
     def test_extract_one_function(self):
-        text = irx.Module.from_c(C_SOURCE).function("square")
-        self.assertIn("@square", text)
-        self.assertNotIn("define", text.replace("define i32 @square", ""))
+        whole = irx.Module.from_c(C_SOURCE)
+        self.assertEqual(sorted(whole.functions), ["square", "twice"])
+        # Asking what came back rather than matching the text of the `define`
+        # line, which carries `dso_local` on Linux and not on macOS.
+        one = irx.Module.from_ll(whole.function("square"), name="square")
+        self.assertEqual(one.functions, ["square"])
 
     def test_asm_comes_out_as_text(self):
         asm = irx.Module.from_c("int f(int x) { return x + x; }").asm()
