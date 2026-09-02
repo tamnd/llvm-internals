@@ -23,8 +23,12 @@ and after that:
 from __future__ import annotations
 
 from . import env as _env
+from . import magic as _magic
+from . import plugin
 from .env import Env, cpu_count, describe, detect
 from .ir import Diff, Module, has_pass, highlight, passes
+from .magic import load_ipython_extension
+from .plugin import Plugin
 from .proc import Result, ToolError, run, version
 from .toolchain import Toolchain, ToolchainError, current, path_to
 from .toolchain import bootstrap as _bootstrap
@@ -35,6 +39,7 @@ __all__ = [
     "Diff",
     "Env",
     "Module",
+    "Plugin",
     "Result",
     "ToolError",
     "Toolchain",
@@ -47,12 +52,19 @@ __all__ = [
     "detect",
     "has_pass",
     "highlight",
+    "load_ipython_extension",
     "passes",
     "path_to",
+    "plugin",
     "run",
     "version",
     "where",
 ]
+
+# Register `%%irxplug` if we are in a notebook. Silent and harmless anywhere
+# else, which matters because this same package runs under plain python3 in the
+# test suite and in CI.
+_magic.register()
 
 
 def bootstrap(verbose: bool = True) -> Toolchain:
@@ -61,7 +73,9 @@ def bootstrap(verbose: bool = True) -> Toolchain:
     Safe to call twice. The second call is free, so a lesson does not have to be
     careful about which cell a reader ran first.
     """
-    return _bootstrap(verbose=verbose)
+    chain = _bootstrap(verbose=verbose)
+    _magic.register()
+    return chain
 
 
 def compile_c(source: str, **kwargs) -> Module:

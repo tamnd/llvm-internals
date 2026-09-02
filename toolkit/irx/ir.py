@@ -22,6 +22,7 @@ import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from . import plugin
 from .proc import ToolError, run
 
 # Keywords worth colouring. This is not the full grammar and does not try to be.
@@ -102,7 +103,7 @@ def _block(body: str, caption: str = "") -> str:
     return f'<div>{head}<pre style="{PRE}">{body}</pre></div>'
 
 
-@dataclass
+@dataclass(repr=False)
 class Module:
     """Textual LLVM IR, plus the operations a lesson wants to do to it."""
 
@@ -211,11 +212,20 @@ class Module:
     def __len__(self) -> int:
         return len(self.text)
 
-    def _repr_html_(self) -> str:
+    def _caption(self) -> str:
         caption = f"{self.name}, {len(self.functions)} function(s)"
         if self.history:
             caption += ", after " + " then ".join(self.history)
-        return _block(highlight(self.text), caption)
+        return caption
+
+    def __repr__(self) -> str:
+        # Not the generated dataclass repr, which prints the entire module as
+        # one escaped string. That happens in a terminal, in a JupyterLite
+        # console, and anywhere else without HTML, and it is unreadable.
+        return f"<Module {self._caption()}, {len(self.lines)} lines>"
+
+    def _repr_html_(self) -> str:
+        return _block(highlight(self.text), self._caption())
 
     def show(self, first: int | None = None) -> None:
         """Print the IR. `first` trims it, because some modules are long."""
@@ -236,13 +246,28 @@ class Module:
             return False
         return True
 
-    def opt(self, passes: str, *extra: str, name: str | None = None) -> "Module":
+    def opt(
+        self, passes: str, *extra: str, name: str | None = None, quiet: bool = False
+    ) -> "Module":
         """Run a pass pipeline and hand back the result as a new Module.
 
         The original is untouched, so `before` and `after` can both be on screen
         at once, which is the shape almost every lesson wants.
+
+        Any plugin built with `%%irxplug` in this session is loaded for you. A
+        reader who has just written a pass called `count` should be able to type
+        `m.opt("count")` and have it work, rather than repeat a path they did
+        not choose and cannot see.
         """
-        result = run("opt", f"-passes={passes}", "-S", *extra, "-", stdin=self.text)
+        result = run(
+            "opt", *plugin.load_flags(), f"-passes={passes}", "-S", *extra, "-", stdin=self.text
+        )
+        # A pass that prints is printing for somebody, and that somebody is the
+        # reader. Half the passes in this course exist to say something on the
+        # way past, and swallowing it because it arrived on stderr rather than
+        # stdout would make those lessons show nothing at all.
+        if not quiet and result.stderr.strip():
+            print(result.stderr.rstrip("\n"))
         return Module(
             text=result.stdout,
             name=name or self.name,
@@ -287,7 +312,7 @@ class Module:
         return Diff(self, other, context=context)
 
 
-@dataclass
+@dataclass(repr=False)
 class Diff:
     """A before and after, rendered so the change is the thing you notice first."""
 
@@ -317,6 +342,11 @@ class Diff:
 
     def __str__(self) -> str:
         return self.unified() or "no change\n"
+
+    def __repr__(self) -> str:
+        # Without HTML the diff itself is the useful thing, so print it rather
+        # than a summary of it.
+        return str(self)
 
     def _repr_html_(self) -> str:
         if not self.changed:

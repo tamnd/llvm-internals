@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1260" height="581" viewBox="0 -16 1260 581" role="img" aria-label="Building an LLVM pass in tree versus as an out of tree plugin">
+  <title>Building an LLVM pass in tree versus as an out of tree plugin</title>
+  <defs><marker id="head-source" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#1971c2"/></marker><marker id="head-tool" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#6741d9"/></marker><marker id="head-output" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2f9e44"/></marker><marker id="head-external" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#495057"/></marker><marker id="head-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#e8590c"/></marker><marker id="head-plain" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#1e1e1e"/></marker></defs>
+  <rect x="0" y="-16" width="1260" height="581" fill="#ffffff"/>
+  <text x="40" y="38.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" fill="#1e1e1e" text-anchor="start" xml:space="preserve">Both of these compile exactly the same PassInfoMixin class. The only difference is who compiles it.</text>
+  <text x="40" y="87.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">in tree, the way you would do it to contribute to LLVM</text>
+  <rect x="40" y="110" width="250" height="80" rx="8" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="165.0" y="146.4" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#495057" text-anchor="middle" xml:space="preserve">git clone llvm-project</text>
+  <text x="165.0" y="162.7" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#495057" text-anchor="middle" xml:space="preserve">1.5 GB of source</text>
+  <rect x="350" y="110" width="250" height="80" rx="8" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="475.0" y="146.4" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#495057" text-anchor="middle" xml:space="preserve">drop your pass in, and edit</text>
+  <text x="475.0" y="162.7" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#495057" text-anchor="middle" xml:space="preserve">three CMakeLists files</text>
+  <rect x="660" y="110" width="250" height="80" rx="8" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="785.0" y="146.4" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#495057" text-anchor="middle" xml:space="preserve">cmake and ninja</text>
+  <text x="785.0" y="162.7" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#495057" text-anchor="middle" xml:space="preserve">about an hour, about 30 GB</text>
+  <rect x="970" y="110" width="250" height="80" rx="8" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="1095.0" y="146.4" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#495057" text-anchor="middle" xml:space="preserve">build/bin/opt</text>
+  <text x="1095.0" y="162.7" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#495057" text-anchor="middle" xml:space="preserve">-passes=yours</text>
+  <line x1="294" y1="150.0" x2="344" y2="150.0" stroke="#1e1e1e" stroke-width="2" marker-end="url(#head-plain)"/>
+  <line x1="604" y1="150.0" x2="654" y2="150.0" stroke="#1e1e1e" stroke-width="2" marker-end="url(#head-plain)"/>
+  <line x1="914" y1="150.0" x2="964" y2="150.0" stroke="#1e1e1e" stroke-width="2" marker-end="url(#head-plain)"/>
+  <text x="40" y="219.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">Needs a real machine and an afternoon. This is the right way to send a patch upstream, and it does not fit in a notebook.</text>
+  <text x="40" y="301.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">out of tree, the way every lesson here does it</text>
+  <rect x="40" y="324" width="250" height="80" rx="8" fill="#e5dbff" stroke="#6741d9" stroke-width="2"/>
+  <text x="165.0" y="360.4" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#6741d9" text-anchor="middle" xml:space="preserve">%%irxplug count</text>
+  <text x="165.0" y="376.7" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#6741d9" text-anchor="middle" xml:space="preserve">your C++, in one cell</text>
+  <rect x="350" y="324" width="250" height="80" rx="8" fill="#e5dbff" stroke="#6741d9" stroke-width="2"/>
+  <text x="475.0" y="360.4" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#6741d9" text-anchor="middle" xml:space="preserve">clang++ -shared -fPIC</text>
+  <text x="475.0" y="376.7" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#6741d9" text-anchor="middle" xml:space="preserve">flags from llvm-config</text>
+  <rect x="660" y="324" width="250" height="80" rx="8" fill="#e5dbff" stroke="#6741d9" stroke-width="2"/>
+  <text x="785.0" y="360.4" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#6741d9" text-anchor="middle" xml:space="preserve">count-4d46e29.dylib</text>
+  <text x="785.0" y="376.7" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#6741d9" text-anchor="middle" xml:space="preserve">cached on the source hash</text>
+  <rect x="970" y="324" width="250" height="80" rx="8" fill="#e5dbff" stroke="#6741d9" stroke-width="2"/>
+  <text x="1095.0" y="360.4" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#6741d9" text-anchor="middle" xml:space="preserve">opt -load-pass-plugin=...</text>
+  <text x="1095.0" y="376.7" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#6741d9" text-anchor="middle" xml:space="preserve">-passes=count</text>
+  <line x1="294" y1="364.0" x2="344" y2="364.0" stroke="#1e1e1e" stroke-width="2" marker-end="url(#head-plain)"/>
+  <line x1="604" y1="364.0" x2="654" y2="364.0" stroke="#1e1e1e" stroke-width="2" marker-end="url(#head-plain)"/>
+  <line x1="914" y1="364.0" x2="964" y2="364.0" stroke="#1e1e1e" stroke-width="2" marker-end="url(#head-plain)"/>
+  <text x="320.0" y="428.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="#e8590c" text-anchor="middle" xml:space="preserve">2.0 s</text>
+  <text x="630.0" y="428.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="#e8590c" text-anchor="middle" xml:space="preserve">0 s if the</text>
+  <text x="630.0" y="443.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="#e8590c" text-anchor="middle" xml:space="preserve">cell is the same</text>
+  <text x="940.0" y="428.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="#e8590c" text-anchor="middle" xml:space="preserve">0.12 s</text>
+  <rect x="970" y="476" width="250" height="44" rx="8" fill="#d3f9d8" stroke="#2f9e44" stroke-width="2"/>
+  <text x="1095.0" y="502.6" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#2f9e44" text-anchor="middle" xml:space="preserve">count: f has 13 instructions</text>
+  <line x1="1095.0" y1="408" x2="1095.0" y2="472" stroke="#1e1e1e" stroke-width="2" marker-end="url(#head-plain)"/>
+  <text x="40" y="489.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">No build tree, no CMake, nothing installed beyond the toolchain that was already there.</text>
+  <text x="40" y="505.2" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">The plugin does not link against LLVM. Its symbols are already inside opt, and they get</text>
+  <text x="40" y="521.5" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">resolved when opt opens the file, which is why this is seconds rather than an hour.</text>
+</svg>
