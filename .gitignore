@@ -21,3 +21,6 @@ __pycache__/
 /notebooks/**/*.nbconvert.ipynb
 
 .DS_Store
+
+# build.py run --output-dir
+.build/

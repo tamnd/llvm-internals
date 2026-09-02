@@ -27,7 +27,7 @@ python build.py run --only x07_gvn # execute headlessly
 python build.py check              # what CI runs
 ```
 
-A pre commit hook rebuilds notebooks so a committed `.ipynb` is never out of sync.
+A pre commit hook rebuilds notebooks so a committed `.ipynb` is never out of sync. The whole format, header keys and cell options included, is in [docs/lesson-format.md](docs/lesson-format.md).
 
 ## Prose rules
 
