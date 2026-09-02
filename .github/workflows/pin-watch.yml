@@ -26,9 +26,13 @@ concurrency:
 
 jobs:
   check:
+    name: has upstream released a new LLVM
     runs-on: ubuntu-latest
     permissions:
+      # Reading docs/pin.json out of the checkout.
       contents: read
+      # Filing the triage issue when the pin has fallen behind, which is the
+      # entire output of this workflow.
       issues: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

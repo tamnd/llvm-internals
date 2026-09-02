@@ -10,6 +10,11 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 5
+    # Wait a week before proposing a bump. A compromised release usually gets
+    # yanked within days, and nothing here is urgent enough to be worth being
+    # the first repository to pull a brand new version of an action.
+    cooldown:
+      default-days: 7
     groups:
       actions:
         patterns: ["*"]

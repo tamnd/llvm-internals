@@ -19,6 +19,7 @@ jobs:
   # library Python and no install step, because a lint that takes ninety seconds
   # to set up is a lint people stop running locally.
   prose:
+    name: prose rules
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -34,6 +35,7 @@ jobs:
   # and the reason both run is that a workflow is the part of a repository
   # nobody reviews carefully and the part that holds a token.
   workflows:
+    name: actionlint and zizmor
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -54,6 +56,7 @@ jobs:
   # a reader can go and check, so a dead link is a broken promise rather than a
   # cosmetic problem.
   links:
+    name: every link resolves
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
