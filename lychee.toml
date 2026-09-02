@@ -1,0 +1,15 @@
+# Links are checked on every pull request. A dead link in this project is a
+# broken promise rather than a cosmetic problem, because the whole pitch is that
+# a reader can go and check.
+
+exclude_path = [".git", "build", "site"]
+
+# Not yet created. They are linked from the README on purpose so that the link
+# starts working the day the repository has issues on it.
+exclude = [
+  "^https://github\\.com/tamnd/llvm-internals/issues",
+]
+
+max_retries = 3
+timeout = 20
+accept = [200, 206, 429]

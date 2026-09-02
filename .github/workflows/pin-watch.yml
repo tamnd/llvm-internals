@@ -1,0 +1,90 @@
+name: pin-watch
+
+# LLVM ships twice a year, in late February and late August, which is double
+# GCC's rate and double CPython's. Every citation, every claim and every shipped
+# toolchain in this repository is written against one tag, so the question "has
+# upstream moved" needs asking on a schedule rather than whenever somebody
+# happens to look.
+#
+# This is the small half of the drift machinery. The large half is driftbot,
+# which resolves every citation and every blueprint generator input daily, and
+# it arrives with M2 when there are citations to resolve.
+
+on:
+  schedule:
+    # 07:00 UTC daily. Nothing here is urgent, and a release that landed
+    # overnight can wait until morning.
+    - cron: "0 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - id: pin
+        run: echo "tag=$(jq -r .tag docs/pin.json)" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          PINNED: ${{ steps.pin.outputs.tag }}
+        with:
+          script: |
+            const pinned = process.env.PINNED
+
+            // Release candidates are not what this is watching for. The pin
+            // only ever moves to a released tag, and an rc opening an issue
+            // every day for six weeks is how a watcher gets muted.
+            const releases = await github.rest.repos.listReleases({
+              owner: 'llvm', repo: 'llvm-project', per_page: 30,
+            })
+            const latest = releases.data
+              .filter(r => !r.prerelease && !r.draft && /^llvmorg-\d+\.\d+\.\d+$/.test(r.tag_name))
+              .map(r => r.tag_name)[0]
+
+            if (!latest || latest === pinned) {
+              core.info(`pin ${pinned} is current, latest release is ${latest}`)
+              return
+            }
+
+            const title = `Upstream moved: LLVM ${latest} is out and the pin is ${pinned}`
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner, repo: context.repo.repo,
+              state: 'open', labels: 'kind/chore',
+            })
+            if (existing.data.some(i => i.title === title)) {
+              core.info('already filed')
+              return
+            }
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              labels: ['kind/chore', 'priority/p1', 'area/build'],
+              body: [
+                `\`${latest}\` is released and \`docs/pin.json\` still says \`${pinned}\`.`,
+                ``,
+                `This is not a request to bump the pin. Moving the pin is a milestone because every citation, every generated blueprint section and every shipped toolchain is written against one tag. What this issue asks for is the triage: read the release notes, work out how many claims are at risk, and write the number down.`,
+                ``,
+                `- [ ] Read the release notes and list every entry that touches material we have written`,
+                `- [ ] Run refcheck against the new tag and count the citations that moved`,
+                `- [ ] Regenerate every generated blueprint section and diff it`,
+                `- [ ] Decide whether the pin moves now or at the next version bump milestone`,
+                ``,
+                `Filed by \`.github/workflows/pin-watch.yml\`.`,
+              ].join('\n'),
+            })

@@ -1,0 +1,30 @@
+name: Open question
+description: Something that has to be measured before work depends on it
+labels: ["kind/open-question", "status/needs-decision"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: The question
+    validations:
+      required: true
+  - type: textarea
+    id: blocks
+    attributes:
+      label: What it blocks
+      description: Which milestone, and what changes if the answer comes back the wrong way
+    validations:
+      required: true
+  - type: textarea
+    id: experiment
+    attributes:
+      label: The experiment that answers it
+      description: The proposal is not the answer. Say what you would run and what number would settle it.
+    validations:
+      required: true
+  - type: input
+    id: threshold
+    attributes:
+      label: The threshold
+      description: The value at which the plan changes
+      placeholder: Under 20 seconds is fine, over 60 seconds and the architecture is wrong

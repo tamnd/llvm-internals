@@ -1,0 +1,51 @@
+name: Lesson
+description: Write or rewrite a chapter
+labels: ["kind/lesson"]
+body:
+  - type: input
+    id: id
+    attributes:
+      label: Lesson id
+      description: From the curriculum. Ids are stable forever and are never reused.
+      placeholder: X07
+    validations:
+      required: true
+  - type: input
+    id: question
+    attributes:
+      label: The question
+      description: One sentence, phrased as something a reader would actually wonder. Not a topic.
+      placeholder: Why did opt turn my multiply into three instructions?
+    validations:
+      required: true
+  - type: textarea
+    id: hook
+    attributes:
+      label: The surprise
+      description: What does the compiler do here that a reader would not have guessed? A lesson with no surprise is either the wrong lesson or one where nobody has found the interesting part yet.
+    validations:
+      required: true
+  - type: textarea
+    id: observable
+    attributes:
+      label: What makes it observable
+      description: The flags, dumps or tools that let a reader watch this happen rather than be told about it.
+    validations:
+      required: true
+  - type: textarea
+    id: boss
+    attributes:
+      label: The boss fight
+      description: The task, and how the grader decides pass or fail. The failure message has to name the input.
+  - type: checkboxes
+    id: bar
+    attributes:
+      label: Quality bar
+      options:
+        - label: Runs cold, top to bottom, from the Colab badge
+        - label: Every claim in the ledger with evidence and a citation
+        - label: Every status claim carries a date and the command that establishes it
+        - label: Every E1 cell has a replay recording
+        - label: Every widget has a static fallback
+        - label: Beginner review
+        - label: Expert review

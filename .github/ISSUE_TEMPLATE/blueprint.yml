@@ -1,0 +1,44 @@
+name: Blueprint
+description: Write or regenerate a normative specification fragment
+labels: ["kind/blueprint"]
+body:
+  - type: input
+    id: id
+    attributes:
+      label: Blueprint id
+      placeholder: BP-TX-LICM
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: What it covers and what it deliberately excludes
+    validations:
+      required: true
+  - type: textarea
+    id: generated
+    attributes:
+      label: What can be generated
+      description: Which sections come from TableGen JSON, a .def file, LangRef or a pass registry, and which have to be written by hand. Generated sections are never hand edited, so getting this split right up front is most of the work.
+    validations:
+      required: true
+  - type: textarea
+    id: contract
+    attributes:
+      label: Section 4c, the pass contract
+      description: For a pass blueprint. Required analyses, preserved analyses, precondition, postcondition, and the refinement obligation as a command that runs. Prose here does not merge.
+      render: shell
+  - type: checkboxes
+    id: bar
+    attributes:
+      label: Quality bar
+      options:
+        - label: All nine sections present
+        - label: No reference to the chapter, no motivation, no analogies
+        - label: Section 6, the edge cases, written before section 3
+        - label: Every fact generated or cited, coverage ledger updated
+        - label: Inferred content under 5 percent
+        - label: Refinement obligation runs in the alive job and publishes a dated status
+        - label: bpc regenerates with no diff
+        - label: Expert review

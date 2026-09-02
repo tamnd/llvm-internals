@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Something in a lesson is wrong
+    url: https://github.com/tamnd/llvm-internals/issues/new?template=wrong.yml
+    about: A claim, a citation or a number that does not hold. These are the most valuable issues this project gets.
+  - name: LLVM itself
+    url: https://github.com/llvm/llvm-project/issues
+    about: A bug in LLVM belongs upstream. If a lesson helped you find it, say so there and link it here.

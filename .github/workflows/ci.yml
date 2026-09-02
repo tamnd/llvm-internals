@@ -1,0 +1,87 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Nothing in this workflow writes anything. Set at the top so a job that gets
+# added later has to ask for a permission out loud rather than inheriting one.
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # The prose rules from CONTRIBUTING.md that a machine can check. Standard
+  # library Python and no install step, because a lint that takes ninety seconds
+  # to set up is a lint people stop running locally.
+  prose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      - run: python tools/prosecheck.py .
+
+  # Workflow files get the same treatment as everything else here. actionlint
+  # catches the shell and expression mistakes, zizmor catches the security ones,
+  # and the reason both run is that a workflow is the part of a repository
+  # nobody reviews carefully and the part that holds a token.
+  workflows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: actionlint
+        run: |
+          bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash) 1.7.12
+          ./actionlint -color
+      - uses: zizmorcore/zizmor-action@70fb788f84895a7701f5643d103d587e460b5c99 # v0.6.3
+        with:
+          # Findings are the point of running this, so a finding fails the run
+          # rather than filing a code scanning alert nobody opens.
+          advanced-security: false
+          persona: pedantic
+
+  # Every link in the repository, resolved. This project's entire pitch is that
+  # a reader can go and check, so a dead link is a broken promise rather than a
+  # cosmetic problem.
+  links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          args: --no-progress --cache --max-cache-age 1d --accept 200,206,429 .
+          fail: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # The jobs below do not exist yet and are listed here rather than in a
+  # planning document so that whoever adds one can see where it goes.
+  #
+  #   lint            build.py check, so a committed notebook still byte matches
+  #                   a fresh build of the lesson source next to it
+  #   refcheck        every path:line@llvmorg-23.1.0 citation resolves and the
+  #                   surrounding lines still hash to what they hashed to
+  #   notebooks       every notebook runs top to bottom from a cold kernel
+  #   alive           every pass blueprint's refinement obligation, over the
+  #                   corpus, which is the job that makes the central claim real
+  #   blueprints      bpc regenerates and the generated sections match
+  #   graders         every boss fight grader against its known good and known
+  #                   bad artifacts
+  #   toolchain       builds the five LLVM configurations from the pin and
+  #                   publishes sizes and digests
+  #   colab-image     nightly, runs every notebook from its badge URL in a
+  #                   Colab equivalent container
+  #
+  # They arrive with M0 and M4. See ROADMAP.md.

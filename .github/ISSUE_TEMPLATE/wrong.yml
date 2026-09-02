@@ -1,0 +1,49 @@
+name: Something is wrong
+description: A claim, a citation, a number or a dump that does not hold
+labels: ["kind/bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        These are the most valuable issues this project gets. Every claim here is supposed to be checkable, so a claim that fails a check is exactly the thing we want to hear about.
+  - type: input
+    id: where
+    attributes:
+      label: Where
+      description: Lesson id, blueprint id, or a file and line
+      placeholder: X03, or BP-IR-POISON section 4b
+    validations:
+      required: true
+  - type: textarea
+    id: claim
+    attributes:
+      label: What it says
+      description: Quote it
+    validations:
+      required: true
+  - type: textarea
+    id: reality
+    attributes:
+      label: What actually happens
+      description: The command you ran and the output you got. A paste beats a description.
+      render: shell
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Which LLVM
+      description: The banner cell prints this, or run `opt --version`
+      placeholder: llvmorg-23.1.0
+    validations:
+      required: true
+  - type: dropdown
+    id: env
+    attributes:
+      label: Where you ran it
+      options:
+        - E0, Colab
+        - E1, local build or container
+        - E2, browser with no account
+    validations:
+      required: true

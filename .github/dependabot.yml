@@ -1,0 +1,19 @@
+version: 2
+
+updates:
+  # Actions are pinned to a commit SHA rather than a tag, which is the only way
+  # a pinned action is actually pinned. That makes them invisible to a human
+  # reading the diff, so dependabot is the thing that keeps them current.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      actions:
+        patterns: ["*"]
+    labels:
+      - kind/chore
+      - priority/p2
+      - area/build
