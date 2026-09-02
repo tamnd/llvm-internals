@@ -84,6 +84,79 @@ m.diff(after)
 
 That diff is nine instructions turning into one, and it is the reason `diff` exists at all. An after picture on its own does not show you that.
 
+## Writing a pass in a cell
+
+This is the part that decides how much of the project is possible. Building LLVM from source is an hour and 30 GB, so if writing a pass meant doing that, then every lesson about writing passes would need a machine that nobody reading in a browser tab has. An out of tree plugin needs neither. It is one C++ file compiled against installed headers, and `opt` loads it at run time.
+
+![Writing a pass in tree versus as an out of tree plugin](../docs/diagrams/pass-plugin.svg)
+
+The class you write is the same either way. `PassInfoMixin`, a `run` method, the same analysis managers. What changes is who compiles it and how long you wait.
+
+```
+%%irxplug count
+#include "llvm/IR/PassManager.h"
+#include "llvm/Passes/PassBuilder.h"
+#include "llvm/Plugins/PassPlugin.h"
+#include "llvm/Support/raw_ostream.h"
+
+using namespace llvm;
+
+namespace {
+struct CountInstructions : PassInfoMixin<CountInstructions> {
+  PreservedAnalyses run(Function &F, FunctionAnalysisManager &) {
+    unsigned n = 0;
+    for (BasicBlock &BB : F) n += BB.size();
+    errs() << "count: " << F.getName() << " has " << n << " instructions\n";
+    return PreservedAnalyses::all();
+  }
+};
+} // namespace
+
+extern "C" LLVM_ATTRIBUTE_WEAK ::llvm::PassPluginLibraryInfo llvmGetPassPluginInfo() {
+  return {LLVM_PLUGIN_API_VERSION, "count", LLVM_VERSION_STRING, [](PassBuilder &PB) {
+            PB.registerPipelineParsingCallback(
+                [](StringRef Name, FunctionPassManager &FPM,
+                   ArrayRef<PassBuilder::PipelineElement>) {
+                  if (Name == "count") {
+                    FPM.addPass(CountInstructions());
+                    return true;
+                  }
+                  return false;
+                });
+          }};
+}
+```
+
+```
+irx: plugin 'count' compiled in 1.3s
+irx: `opt` will load it as count-4d46e29640d6.dylib, and `count` is now a pass name
+```
+
+After that `count` is a pass name like any other, and nothing has to be told where the file went:
+
+```python
+m = irx.Module.from_c("int f(int x) { int y = x + x; return y; }")
+m.opt("count")
+m.opt("mem2reg,count")
+```
+
+```
+count: f has 8 instructions
+count: f has 2 instructions
+```
+
+Same pass, same function, run either side of `mem2reg`, and that is a lesson.
+
+A few details that took some finding:
+
+**`PassPlugin.h` moved.** It is `llvm/Plugins/PassPlugin.h` in this release, not `llvm/Passes/PassPlugin.h`. Nearly every pass plugin tutorial online predates the move, so it is the first error most people hit, and `irx` recognises it and says so.
+
+**The compile flags come from `llvm-config --cxxflags`, not from us.** A plugin has to agree with the LLVM that loads it about RTTI, exceptions and the C++ standard. Getting one of those wrong gives you an undefined symbol at load time, or a crash. `llvm-config` knows how its own LLVM was built, so it gets asked rather than guessed at.
+
+**Nothing links against LLVM.** The symbols a plugin needs are already inside `opt` and get resolved when it opens the file. ELF does that by default. Mach-O needs `-Wl,-undefined,dynamic_lookup`, which is added for you on macOS and left off everywhere else.
+
+**Rebuilds are cached on content.** The key covers the source, the LLVM version and the flags, so editing the cell recompiles and rerunning an unchanged cell costs nothing. In a lesson where somebody runs the same cell thirty times, only the edits are paid for.
+
 ## When a tool fails
 
 The default subprocess failure is `CalledProcessError: returned non-zero exit status 1`, which tells a reader who has never run `opt` before absolutely nothing. `irx` raises `ToolError` instead, with the command, the real stderr, and where possible a sentence about what to do:
@@ -100,7 +173,7 @@ several changed spelling between releases. `irx.passes()` lists what
 this exact binary accepts.
 ```
 
-Three failures get a hint like that, chosen because they are the three that people actually hit: a pass name that does not exist, a parse error in hand written IR, and a pass plugin path that points at nothing.
+A handful of failures get a hint like that, and the list is not a list of everything that can go wrong. It is the ones people actually hit: a pass name that does not exist, a parse error in hand written IR, a pass plugin path that points at nothing, the `PassPlugin.h` header that moved, an undefined symbol at load time, and an LLVM install that has the tools but not the headers.
 
 ## Notes on some choices
 

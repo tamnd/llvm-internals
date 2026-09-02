@@ -81,7 +81,11 @@ jobs:
           echo "deb http://apt.llvm.org/$codename/ llvm-toolchain-$codename-$major main" \
             | sudo tee /etc/apt/sources.list.d/llvm.list > /dev/null
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends "clang-$major" "llvm-$major"
+          # llvm-N is tools only. The headers a pass plugin compiles against are
+          # in llvm-N-dev, and llvm-config points at them either way, so leaving
+          # it out gets you a confident -I at a directory that is not there.
+          sudo apt-get install -y --no-install-recommends \
+            "clang-$major" "llvm-$major" "llvm-$major-dev"
       - name: the pin and the toolkit copy of it agree
         run: python3 -m unittest tests.test_pin -v
       # A skip would mean the install above quietly did not work, and the suite

@@ -14,11 +14,48 @@ import unittest
 from pathlib import Path
 
 import irx
-from irx import env, ir, proc, toolchain
+from irx import env, ir, magic, plugin, proc, toolchain
 
 C_SOURCE = """
 int square(int x) { return x * x; }
 int twice(int x) { return x + x; }
+"""
+
+# The smallest pass that is still a real pass. It runs over every function and
+# says how many instructions it saw, which is enough to prove the plugin loaded
+# and enough to show a reader something change when they put it after mem2reg.
+COUNT_PASS = """
+#include "llvm/IR/PassManager.h"
+#include "llvm/Passes/PassBuilder.h"
+#include "llvm/Plugins/PassPlugin.h"
+#include "llvm/Support/raw_ostream.h"
+
+using namespace llvm;
+
+namespace {
+struct CountInstructions : PassInfoMixin<CountInstructions> {
+  PreservedAnalyses run(Function &F, FunctionAnalysisManager &) {
+    unsigned n = 0;
+    for (BasicBlock &BB : F) n += BB.size();
+    errs() << "count: " << F.getName() << " has " << n << " instructions\\n";
+    return PreservedAnalyses::all();
+  }
+};
+} // namespace
+
+extern "C" LLVM_ATTRIBUTE_WEAK ::llvm::PassPluginLibraryInfo llvmGetPassPluginInfo() {
+  return {LLVM_PLUGIN_API_VERSION, "count", LLVM_VERSION_STRING, [](PassBuilder &PB) {
+            PB.registerPipelineParsingCallback(
+                [](StringRef Name, FunctionPassManager &FPM,
+                   ArrayRef<PassBuilder::PipelineElement>) {
+                  if (Name == "count") {
+                    FPM.addPass(CountInstructions());
+                    return true;
+                  }
+                  return false;
+                });
+          }};
+}
 """
 
 
@@ -120,6 +157,14 @@ declare void @llvm.trap()
 
     def test_repr_html_mentions_the_name(self):
         self.assertIn("t,", self.m._repr_html_())
+
+    def test_plain_repr_is_a_summary_not_the_whole_module(self):
+        # This is what a terminal or a JupyterLite console shows, and the
+        # generated dataclass version dumps the entire module as one escaped
+        # string, which nobody can read.
+        text = repr(self.m)
+        self.assertIn("<Module t, 1 function(s)", text)
+        self.assertNotIn("ret i32", text)
 
     def test_opt_does_not_mutate_the_original(self):
         before = self.m.text
@@ -241,6 +286,109 @@ class TestBootstrapOrder(unittest.TestCase):
         self.assertIs(toolchain.bootstrap(verbose=False), first)
 
 
+class TestPluginRegistry(unittest.TestCase):
+    """The bookkeeping around plugins, with nothing compiled."""
+
+    def setUp(self):
+        plugin.forget()
+
+    def tearDown(self):
+        plugin.forget()
+
+    def test_suffix_matches_the_platform(self):
+        import platform as platform_module
+
+        expected = ".dylib" if platform_module.system() == "Darwin" else ".so"
+        self.assertEqual(plugin.suffix(), expected)
+
+    def test_macos_needs_the_undefined_flag_and_linux_does_not(self):
+        import platform as platform_module
+
+        flags = plugin.link_flags()
+        if platform_module.system() == "Darwin":
+            self.assertIn("-Wl,-undefined,dynamic_lookup", flags)
+        else:
+            self.assertEqual(flags, [])
+
+    def test_load_flags_are_empty_until_something_is_built(self):
+        self.assertEqual(plugin.load_flags(), [])
+
+    def test_load_flags_name_every_plugin_built(self):
+        plugin._registry["a"] = plugin.Plugin("a", Path("/tmp/a.so"), "", 1.0, False)
+        plugin._registry["b"] = plugin.Plugin("b", Path("/tmp/b.so"), "", 1.0, False)
+        self.assertEqual(
+            sorted(plugin.load_flags()),
+            ["-load-pass-plugin=/tmp/a.so", "-load-pass-plugin=/tmp/b.so"],
+        )
+
+    def test_asking_for_one_that_was_never_built_says_what_was(self):
+        plugin._registry["count"] = plugin.Plugin("count", Path("/tmp/c.so"), "", 1.0, False)
+        with self.assertRaises(KeyError) as caught:
+            plugin.get("cuont")
+        message = str(caught.exception)
+        self.assertIn("cuont", message)
+        self.assertIn("count", message)
+        self.assertIn("restart", message)
+
+    def test_forget_one_leaves_the_others(self):
+        plugin._registry["a"] = plugin.Plugin("a", Path("/tmp/a.so"), "", 1.0, False)
+        plugin._registry["b"] = plugin.Plugin("b", Path("/tmp/b.so"), "", 1.0, False)
+        plugin.forget("a")
+        self.assertEqual([p.name for p in plugin.registered()], ["b"])
+
+    def test_a_cached_build_says_so_rather_than_claiming_a_fast_compile(self):
+        fresh = plugin.Plugin("x", Path("/tmp/x.so"), "", 9.4, cached=False)
+        reused = plugin.Plugin("x", Path("/tmp/x.so"), "", 0.0, cached=True)
+        self.assertIn("9.4s", str(fresh))
+        self.assertIn("already built", str(reused))
+
+
+class TestMagicLine(unittest.TestCase):
+    """Parsing `%%irxplug ...`, with the compile stubbed out."""
+
+    def setUp(self):
+        self.calls: list[tuple] = []
+        self.saved = plugin.build
+        plugin.build = lambda name, cell, extra=(), force=False, verbose=True: self.record(
+            name, cell, extra, force
+        )
+
+    def tearDown(self):
+        plugin.build = self.saved
+
+    def record(self, name, cell, extra, force):
+        self.calls.append((name, cell, extra, force))
+        return plugin.Plugin(name, Path(f"/tmp/{name}.so"), cell, 1.0, cached=True)
+
+    def test_name_only(self):
+        magic.irxplug("count", "// source")
+        self.assertEqual(self.calls, [("count", "// source", (), False)])
+
+    def test_force_is_taken_out_of_the_flags(self):
+        magic.irxplug("count --force", "// source")
+        name, _, extra, force = self.calls[0]
+        self.assertTrue(force)
+        self.assertEqual(extra, ())
+
+    def test_other_flags_are_passed_through_to_clang(self):
+        magic.irxplug("count -O2 -Wall", "// source")
+        self.assertEqual(self.calls[0][2], ("-O2", "-Wall"))
+
+    def test_no_name_is_an_error_that_shows_the_usage(self):
+        with self.assertRaises(ValueError) as caught:
+            magic.irxplug("", "// source")
+        self.assertIn("%%irxplug", str(caught.exception))
+
+    def test_a_flag_where_the_name_should_be_is_caught(self):
+        # Easy mistake, and without this the plugin would be called "-O2".
+        with self.assertRaises(ValueError) as caught:
+            magic.irxplug("-O2", "// source")
+        self.assertIn("name", str(caught.exception))
+
+    def test_registering_outside_a_notebook_is_a_quiet_no(self):
+        self.assertFalse(magic.register())
+
+
 class TestHints(unittest.TestCase):
     def make(self, stderr: str, argv: list[str] | None = None) -> proc.Result:
         return proc.Result("opt", argv or ["opt"], 1, "", stderr, 0.0)
@@ -252,6 +400,25 @@ class TestHints(unittest.TestCase):
     def test_parse_error_says_it_is_your_ir(self):
         hint = proc.hint_for(self.make("<stdin>:3:5: error: expected instruction opcode"))
         self.assertIn("parse error in your IR", hint)
+
+    def test_the_header_that_moved_gets_named(self):
+        hint = proc.hint_for(
+            self.make("count.cpp:3:10: fatal error: 'llvm/Passes/PassPlugin.h' file not found")
+        )
+        self.assertIn("llvm/Plugins/PassPlugin.h", hint)
+
+    def test_headers_missing_is_told_apart_from_the_header_that_moved(self):
+        hint = proc.hint_for(
+            self.make("count.cpp:2:10: fatal error: 'llvm/IR/PassManager.h' file not found")
+        )
+        self.assertIn("llvm-N-dev", hint)
+        self.assertNotIn("Plugins", hint)
+
+    def test_undefined_symbol_points_at_the_flags(self):
+        hint = proc.hint_for(
+            self.make("undefined symbol: _ZN4llvm11PassBuilder", ["opt", "-load-pass-plugin=p.so"])
+        )
+        self.assertIn("cxxflags", hint)
 
     def test_missing_plugin_only_fires_for_plugin_commands(self):
         plain = self.make("no such file or directory")
@@ -364,6 +531,80 @@ class TestAgainstRealLLVM(unittest.TestCase):
         line = irx.where()
         self.assertRegex(line, r"^E[012],")
         self.assertIn("LLVM", line)
+
+
+@needs_llvm
+class TestPassPlugin(unittest.TestCase):
+    """The M0 gate, run as a test.
+
+    Everything in Parts IV and XI assumes a reader can write a pass in a cell
+    and have it load a few seconds later. This compiles one and loads it, so if
+    that ever stops being true the suite says so rather than a lesson doing it.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        plugin.forget()
+        cls.built = plugin.build("count", COUNT_PASS, verbose=False)
+
+    @classmethod
+    def tearDownClass(cls):
+        plugin.forget()
+
+    def test_it_compiled_at_all(self):
+        self.assertTrue(self.built.path.exists())
+        self.assertEqual(self.built.path.suffix, plugin.suffix())
+
+    def test_the_flags_came_from_llvm_config_not_from_us(self):
+        flags = plugin.cxxflags()
+        self.assertTrue(any(f.startswith("-I") for f in flags), flags)
+        self.assertTrue(any(f.startswith("-std=") for f in flags), flags)
+
+    def test_building_the_same_source_again_is_cached(self):
+        again = plugin.build("count", COUNT_PASS, verbose=False)
+        self.assertTrue(again.cached)
+        self.assertEqual(again.path, self.built.path)
+
+    def test_editing_the_source_gets_a_different_file(self):
+        edited = plugin.build("count", COUNT_PASS + "\n// a comment\n", verbose=False)
+        self.assertNotEqual(edited.path, self.built.path)
+        plugin.build("count", COUNT_PASS, verbose=False)
+
+    def test_opt_loads_it_without_being_told_where_it_is(self):
+        # The reader typed `count`, not a path into a cache directory they have
+        # never seen. This is the whole ergonomic point of the registry.
+        module = irx.Module.from_c(C_SOURCE)
+        self.assertIn("-load-pass-plugin=", " ".join(plugin.load_flags()))
+        module.opt("count", quiet=True)
+
+    def test_the_pass_output_reaches_the_reader(self):
+        import contextlib
+        import io
+
+        module = irx.Module.from_c("int f(int x) { return x + x; }")
+        captured = io.StringIO()
+        with contextlib.redirect_stdout(captured):
+            module.opt("count")
+        self.assertIn("count: f has", captured.getvalue())
+
+    def test_it_composes_with_the_real_pipeline(self):
+        # Running the same pass before and after mem2reg is the shape of half
+        # the lessons in Part IV, so it gets a test rather than a hope.
+        import contextlib
+        import io
+
+        module = irx.Module.from_c("int f(int x) { int y = x + x; return y; }")
+        before, after = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(before):
+            module.opt("count")
+        with contextlib.redirect_stdout(after):
+            module.opt("mem2reg,count")
+        self.assertNotEqual(before.getvalue(), after.getvalue())
+
+    def test_an_unknown_pass_name_still_fails_clearly_with_a_plugin_loaded(self):
+        with self.assertRaises(proc.ToolError) as caught:
+            irx.Module.from_c(C_SOURCE).opt("cuont")
+        self.assertIn("irx.passes()", str(caught.exception))
 
 
 if __name__ == "__main__":
