@@ -27,6 +27,7 @@ from . import magic as _magic
 from . import pipeline
 from . import plugin
 from . import predict
+from . import verify
 from .env import Env, cpu_count, describe, detect
 from .ir import Diff, Module, has_pass, highlight, passes
 from .magic import load_ipython_extension
@@ -35,22 +36,27 @@ from .plugin import Plugin
 from .predict import Gate, gate
 from .proc import Result, ToolError, run, version
 from .toolchain import Toolchain, ToolchainError, current, path_to
+from .verify import AliveError, Report, Verdict, alive
 from .toolchain import bootstrap as _bootstrap
 
 __version__ = "0.1.0"
 
 __all__ = [
+    "AliveError",
     "Diff",
     "Env",
     "Gate",
     "Module",
     "Plugin",
+    "Report",
     "Result",
     "Step",
     "Tape",
     "ToolError",
     "Toolchain",
     "ToolchainError",
+    "Verdict",
+    "alive",
     "bootstrap",
     "compile_c",
     "cpu_count",
@@ -68,6 +74,7 @@ __all__ = [
     "predict",
     "run",
     "tape",
+    "verify",
     "version",
     "where",
 ]
