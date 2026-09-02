@@ -14,7 +14,7 @@ import unittest
 from pathlib import Path
 
 import irx
-from irx import env, ir, magic, plugin, proc, toolchain
+from irx import env, ir, magic, pipeline, plugin, proc, toolchain
 
 C_SOURCE = """
 int square(int x) { return x * x; }
@@ -389,6 +389,157 @@ class TestMagicLine(unittest.TestCase):
         self.assertFalse(magic.register())
 
 
+
+# Trimmed from a real `opt -passes=... --print-changed --print-module-scope`
+# run. Keeping the real headers matters more than keeping the real IR, because
+# the headers are the only thing the parser looks at.
+START_IR = """; ModuleID = 'from_c'
+define i32 @f(i32 %x) {
+  ret i32 %x
+}
+"""
+
+PRINT_CHANGED = """*** IR Dump At Start ***
+; ModuleID = 'from_c'
+define i32 @f(i32 %x) {
+  %a = add i32 %x, %x
+  ret i32 %a
+}
+*** IR Dump After Annotation2MetadataPass on [module] omitted because no change ***
+*** IR Dump After SROAPass on f ***
+; ModuleID = 'from_c'
+define i32 @f(i32 %x) {
+  %a = add i32 %x, %x
+  ret i32 %a
+}
+*** IR Dump After InstCombinePass on f ***
+; ModuleID = 'from_c'
+define i32 @f(i32 %x) {
+  ret i32 %x
+}
+*** IR Dump After SimplifyCFGPass on f omitted because no change ***
+"""
+
+
+class TestTapeParsing(unittest.TestCase):
+    def tape(self) -> pipeline.Tape:
+        source = ir.Module.from_ll(START_IR, name="from_c")
+        return pipeline._parse(PRINT_CHANGED, "default<O2>", source)
+
+    def test_every_pass_is_kept_not_only_the_ones_that_did_something(self):
+        t = self.tape()
+        self.assertEqual([s.name for s in t.steps],
+                         ["Annotation2MetadataPass", "SROAPass", "InstCombinePass",
+                          "SimplifyCFGPass"])
+
+    def test_the_ones_that_changed_something_are_marked(self):
+        self.assertEqual([s.short for s in self.tape().changed], ["SROA", "InstCombine"])
+
+    def test_the_index_counts_the_whole_pipeline_not_only_the_changes(self):
+        # The point of the tape is that pass 3 of 4 did something and the rest
+        # did not, so the numbering has to be over everything.
+        self.assertEqual([s.index for s in self.tape().changed], [2, 3])
+
+    def test_a_pass_that_changed_nothing_carries_no_ir(self):
+        skipped = [s for s in self.tape().steps if not s.changed]
+        self.assertTrue(all(s.ir == "" for s in skipped))
+
+    def test_scope_is_kept_so_a_module_pass_reads_differently(self):
+        t = self.tape()
+        self.assertEqual(t.steps[0].scope, "[module]")
+        self.assertEqual(t.steps[1].scope, "f")
+
+    def test_the_start_dump_is_not_counted_as_a_pass(self):
+        self.assertEqual(len(self.tape().steps), 4)
+
+    def test_frames_are_the_start_plus_one_per_change(self):
+        self.assertEqual(len(self.tape().frames), 3)
+
+    def test_step_lookup_is_by_substring_and_case_insensitive(self):
+        self.assertEqual(self.tape().step("instcombine").name, "InstCombinePass")
+
+    def test_asking_for_a_pass_that_did_not_run_says_how_many_did(self):
+        with self.assertRaises(KeyError) as caught:
+            self.tape().step("loopunroll")
+        self.assertIn("4 passes did", str(caught.exception))
+
+    def test_headline_carries_both_numbers(self):
+        self.assertIn("4 passes ran, 2 changed", self.tape().headline)
+
+
+class TestTapeText(unittest.TestCase):
+    """The text form is what a terminal and a stripped down renderer get."""
+
+    def setUp(self):
+        source = ir.Module.from_ll(START_IR, name="from_c")
+        self.t = pipeline._parse(PRINT_CHANGED, "default<O2>", source)
+
+    def test_it_names_every_pass_that_changed_something(self):
+        text = str(self.t)
+        self.assertIn("SROA", text)
+        self.assertIn("InstCombine", text)
+
+    def test_it_does_not_list_the_passes_that_did_nothing(self):
+        self.assertNotIn("Annotation2Metadata", str(self.t))
+
+    def test_one_line_is_singular(self):
+        self.assertEqual(pipeline._size(-1), "-1 line")
+        self.assertEqual(pipeline._size(-2), "-2 lines")
+        self.assertEqual(pipeline._size(0), "same length")
+
+    def test_a_long_loop_scope_is_cut_so_the_columns_hold(self):
+        self.t.steps[1].scope = "loop %for.body in function g"
+        line = [l for l in str(self.t).split("\n") if "SROA" in l][0]
+        self.assertIn("...", line)
+        self.assertLess(len(line), 90)
+
+    def test_repr_is_a_summary_not_the_whole_run(self):
+        self.assertEqual(repr(self.t), f"<Tape {self.t.headline}>")
+
+
+class TestTapeWidget(unittest.TestCase):
+    def setUp(self):
+        source = ir.Module.from_ll(START_IR, name="from_c")
+        self.t = pipeline._parse(PRINT_CHANGED, "default<O2>", source)
+        self.html = self.t._repr_html_()
+
+    def test_there_is_no_javascript_in_it(self):
+        # This is the whole reason for the radio and CSS design. Colab sandboxes
+        # output, JupyterLite has no kernel to call back into, and the published
+        # site is static. A script tag here would break all three.
+        self.assertNotIn("<script", self.html.lower())
+        self.assertNotIn("onclick", self.html.lower())
+
+    def test_one_radio_and_one_panel_per_frame(self):
+        self.assertEqual(self.html.count('type="radio"'), 3)
+        self.assertEqual(self.html.count('class="fr"'), 3)
+
+    def test_the_first_frame_is_the_one_that_shows_with_no_stylesheet(self):
+        # Everything after the first carries an inline display:none, so a
+        # renderer that drops the <style> shows one module rather than all of
+        # them stacked up.
+        self.assertIn('<div class="fr">', self.html)
+        self.assertEqual(self.html.count('<div class="fr" style="display:none">'), 2)
+
+    def test_the_ids_are_scoped_so_two_tapes_do_not_fight(self):
+        other = pipeline._parse(
+            PRINT_CHANGED, "default<O1>",
+            ir.Module.from_ll("define void @h() {\n  ret void\n}", name="other"),
+        )
+        self.assertNotEqual(pipeline._ident(self.t), pipeline._ident(other))
+
+    def test_the_same_tape_renders_to_the_same_html_twice(self):
+        self.assertEqual(self.html, self.t._repr_html_())
+
+    def test_the_pass_names_survive_into_the_strip(self):
+        self.assertIn(">SROA +1<", self.html)
+
+    def test_a_huge_module_is_not_carried_in_every_frame(self):
+        big = "\n".join(f"  %v{i} = add i32 1, 1" for i in range(pipeline.FULL_MODULE_LIMIT + 5))
+        self.t.steps[1].ir = f"define void @f() {{\n{big}\n}}\n"
+        self.assertIn("too much to carry in every frame", self.t._repr_html_())
+
+
 class TestHints(unittest.TestCase):
     def make(self, stderr: str, argv: list[str] | None = None) -> proc.Result:
         return proc.Result("opt", argv or ["opt"], 1, "", stderr, 0.0)
@@ -605,6 +756,80 @@ class TestPassPlugin(unittest.TestCase):
         with self.assertRaises(proc.ToolError) as caught:
             irx.Module.from_c(C_SOURCE).opt("cuont")
         self.assertIn("irx.passes()", str(caught.exception))
+
+
+@needs_llvm
+class TestTapeAgainstRealLLVM(unittest.TestCase):
+    """The parser is written against what opt prints, so it gets tested there."""
+
+    LOOP = """
+    int f(int x) { int y = x + x; return y * 2; }
+    int g(int n) { int s = 0; for (int i = 0; i < n; i++) s += i * 3; return s; }
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        plugin.forget()
+        cls.module = irx.Module.from_c(cls.LOOP)
+        cls.tape = cls.module.tape("default<O2>")
+
+    def test_most_passes_do_nothing_which_is_the_entire_point(self):
+        self.assertGreater(len(self.tape.steps), 100)
+        self.assertLess(len(self.tape.changed), len(self.tape.steps) / 4)
+
+    def test_every_frame_is_a_module_that_actually_parses(self):
+        for frame in self.tape.frames:
+            self.assertTrue(frame.is_valid(), f"frame after {frame.history[-1:]} is not IR")
+
+    def test_the_last_frame_is_what_opt_gives_you_on_its_own(self):
+        direct = self.module.opt("default<O2>", quiet=True)
+        self.assertEqual(self.tape.final.functions, direct.functions)
+        self.assertEqual(self.tape.final.count("alloca"), direct.count("alloca"))
+
+    def test_the_loop_passes_show_up_with_the_loop_in_their_scope(self):
+        rotate = self.tape.step("LoopRotate")
+        self.assertIn("loop", rotate.scope)
+
+    def test_pass_managers_and_the_verifier_are_not_counted_as_passes(self):
+        names = [s.name for s in self.tape.steps]
+        self.assertNotIn("VerifierPass", names)
+        self.assertNotIn("ModuleToFunctionPassAdaptor", names)
+
+    def test_o0_runs_passes_and_changes_nothing(self):
+        # A good first cell in a lesson, because it is the opposite of what
+        # people expect a pipeline to look like.
+        t = self.module.tape("default<O0>")
+        self.assertGreater(len(t.steps), 0)
+        self.assertEqual(t.changed, [])
+        self.assertIn("Nothing in this pipeline touched", str(t))
+
+    def test_the_same_pass_on_two_functions_is_two_steps(self):
+        t = self.module.tape("mem2reg")
+        self.assertEqual([s.scope for s in t.steps], ["f", "g"])
+
+
+@needs_llvm
+class TestTapeWithAPrintingPlugin(unittest.TestCase):
+    """A teaching pass prints, and opt's dumps and errs() share one stream."""
+
+    @classmethod
+    def setUpClass(cls):
+        plugin.forget()
+        plugin.build("count", COUNT_PASS, verbose=False)
+
+    @classmethod
+    def tearDownClass(cls):
+        plugin.forget()
+
+    def test_a_pass_that_prints_does_not_corrupt_the_frame_before_it(self):
+        t = irx.Module.from_c(C_SOURCE).tape("mem2reg,count,instcombine")
+        for frame in t.frames:
+            self.assertTrue(frame.is_valid(), "a frame has the pass output stuck to it")
+
+    def test_a_plugin_pass_is_recognised_despite_the_space_in_its_name(self):
+        t = irx.Module.from_c(C_SOURCE).tape("mem2reg,count")
+        self.assertTrue(any("CountInstructions" in s.name for s in t.steps))
+
 
 
 if __name__ == "__main__":
