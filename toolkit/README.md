@@ -173,7 +173,7 @@ several changed spelling between releases. `irx.passes()` lists what
 this exact binary accepts.
 ```
 
-Three failures get a hint like that, chosen because they are the three that people actually hit: a pass name that does not exist, a parse error in hand written IR, and a pass plugin path that points at nothing.
+A handful of failures get a hint like that, and the list is not a list of everything that can go wrong. It is the ones people actually hit: a pass name that does not exist, a parse error in hand written IR, a pass plugin path that points at nothing, the `PassPlugin.h` header that moved, an undefined symbol at load time, and an LLVM install that has the tools but not the headers.
 
 ## Notes on some choices
 

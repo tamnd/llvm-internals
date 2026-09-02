@@ -407,6 +407,13 @@ class TestHints(unittest.TestCase):
         )
         self.assertIn("llvm/Plugins/PassPlugin.h", hint)
 
+    def test_headers_missing_is_told_apart_from_the_header_that_moved(self):
+        hint = proc.hint_for(
+            self.make("count.cpp:2:10: fatal error: 'llvm/IR/PassManager.h' file not found")
+        )
+        self.assertIn("llvm-N-dev", hint)
+        self.assertNotIn("Plugins", hint)
+
     def test_undefined_symbol_points_at_the_flags(self):
         hint = proc.hint_for(
             self.make("undefined symbol: _ZN4llvm11PassBuilder", ["opt", "-load-pass-plugin=p.so"])

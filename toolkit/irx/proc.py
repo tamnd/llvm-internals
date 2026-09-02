@@ -69,7 +69,7 @@ def indent(text: str, prefix: str) -> str:
 
 
 def hint_for(result: Result) -> str:
-    """Turn the three failures every reader hits into a sentence they can use."""
+    """Turn the failures readers actually hit into a sentence they can use."""
     text = (result.stderr + result.stdout).lower()
     if "unknown pass name" in text:
         return (
@@ -88,6 +88,13 @@ def hint_for(result: Result) -> str:
             "That header moved. It is `llvm/Plugins/PassPlugin.h` now, not\n"
             "`llvm/Passes/PassPlugin.h`. Nearly every pass plugin tutorial online\n"
             "predates the move, so this is the first error most people hit."
+        )
+    if "llvm/ir/passmanager.h" in text and "not found" in text:
+        return (
+            "This LLVM has the tools but not the headers, so there is nothing to\n"
+            "compile a plugin against. On Debian and Ubuntu the headers are in the\n"
+            "separate `llvm-N-dev` package. `llvm-config --includedir` will happily\n"
+            "name a directory that does not exist, so the flags look right."
         )
     if "undefined symbol" in text and "-load-pass-plugin" in result.command:
         return (
