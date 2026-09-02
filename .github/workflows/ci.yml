@@ -30,6 +30,31 @@ jobs:
           python-version: "3.13"
       - run: python tools/prosecheck.py .
 
+  # A committed notebook has to be exactly what its lesson source produces.
+  # Without this job the whole "notebooks are build output" rule is a convention
+  # people follow until the first hurry, and then it is nothing.
+  build:
+    name: notebooks match their source
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+      # Only needed by the one test that executes a notebook for real. The rest
+      # of the suite runs on a bare interpreter, which is what a contributor
+      # fixing a typo should need.
+      - run: pip install --quiet nbconvert ipykernel
+      - run: python3 -m unittest discover -s tests -v
+      - run: python3 build.py check
+      # Diagrams are generated too, and a diagram that no longer matches the
+      # script that drew it is the same class of problem as a stale notebook.
+      - run: python3 build.py diagrams
+      - name: diagrams are up to date
+        run: git diff --exit-code -- docs/diagrams
+
   # Workflow files get the same treatment as everything else here. actionlint
   # catches the shell and expression mistakes, zizmor catches the security ones,
   # and the reason both run is that a workflow is the part of a repository
@@ -72,8 +97,6 @@ jobs:
   # The jobs below do not exist yet and are listed here rather than in a
   # planning document so that whoever adds one can see where it goes.
   #
-  #   lint            build.py check, so a committed notebook still byte matches
-  #                   a fresh build of the lesson source next to it
   #   refcheck        every path:line@llvmorg-23.1.0 citation resolves and the
   #                   surrounding lines still hash to what they hashed to
   #   notebooks       every notebook runs top to bottom from a cold kernel
