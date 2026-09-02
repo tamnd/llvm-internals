@@ -540,6 +540,126 @@ class TestTapeWidget(unittest.TestCase):
         self.assertIn("too much to carry in every frame", self.t._repr_html_())
 
 
+PRINT_CHANGED_DELETED = """*** IR Dump At Start ***
+; ModuleID = 'from_c'
+define i32 @g(i32 %n) {
+  br label %body
+}
+*** IR Dump After IndVarSimplifyPass on loop %body in function g ***
+; ModuleID = 'from_c'
+define i32 @g(i32 %n) {
+  br i1 false, label %body, label %out
+}
+*** IR Pass LoopDeletionPass invalidated ***
+*** IR Pass PassManager<Loop, LoopAnalysisManager, LoopStandardAnalysisResults &, LPMUpdater &> invalidated ***
+*** IR Dump After GVNPass on g ***
+; ModuleID = 'from_c'
+define i32 @g(i32 %n) {
+  ret i32 0
+}
+"""
+
+
+class TestAPassThatDeletedItsLoop(unittest.TestCase):
+    """The header shape that has no scope, because there is nothing left to name.
+
+    A loop pass that deletes its loop cannot print the loop afterwards, so opt
+    writes one line and no IR. It is the most interesting pass in the run and
+    the easiest one to lose, which is what happened here until a lesson went
+    looking for it.
+    """
+
+    def setUp(self):
+        source = ir.Module.from_ll(START_IR, name="from_c")
+        self.t = pipeline._parse(PRINT_CHANGED_DELETED, "default<O2>", source)
+
+    def test_it_is_on_the_tape_at_all(self):
+        self.assertIn("LoopDeletionPass", [s.name for s in self.t.steps])
+
+    def test_it_counts_as_a_change_because_it_changed_the_module(self):
+        step = self.t.step("LoopDeletion")
+        self.assertTrue(step.changed)
+        self.assertTrue(step.invalidated)
+
+    def test_it_has_no_frame_because_there_was_nothing_left_to_print(self):
+        self.assertEqual(self.t.step("LoopDeletion").ir, "")
+        self.assertNotIn("LoopDeletionPass", [s.name for s in self.t.shown])
+
+    def test_the_pass_manager_that_went_with_it_is_still_plumbing(self):
+        # opt says "ignored" about most plumbing, which is how the rest of it
+        # gets left out. It does not say that about one that was invalidated,
+        # so that one has to be recognised by name or the count goes up by one.
+        self.assertEqual([s.short for s in self.t.steps],
+                         ["IndVarSimplify", "LoopDeletion", "GVN"])
+
+    def test_the_scope_reads_as_gone_rather_than_as_blank(self):
+        self.assertEqual(self.t.step("LoopDeletion").where, "[gone]")
+
+    def test_the_text_form_says_what_happened_instead_of_a_line_count(self):
+        line = [l for l in str(self.t).split("\n") if "LoopDeletion" in l][0]
+        self.assertIn("deleted it, no dump", line)
+
+    def test_the_frames_after_it_are_still_the_right_ones(self):
+        # This is the bug this whole class is about. There are three changed
+        # passes and only two frames, so anything that walks them in step has to
+        # know which is which or every panel after the deletion is off by one.
+        self.assertEqual(len(self.t.changed), 3)
+        self.assertEqual(len(self.t.frames), 3)
+        self.assertIn("ret i32 0", self.t.final.text)
+
+    def test_the_widget_gives_it_a_chip_and_an_explanation_not_a_diff(self):
+        html = self.t._repr_html_()
+        self.assertEqual(html.count('type="radio"'), 4)
+        self.assertIn("LoopDeletion gone", html)
+        self.assertIn("deleted the thing it was running on", html)
+
+    def test_the_gvn_panel_shows_the_gvn_frame(self):
+        # Off by one here would show the IndVarSimplify diff under GVN's chip,
+        # which is the kind of wrong that nobody notices.
+        html = self.t._repr_html_()
+        self.assertIn("pass 3 of 3, GVNPass on g", html)
+
+
+PRINT_CHANGED_STRANGE = """*** IR Dump At Start ***
+; ModuleID = 'from_c'
+define i32 @f(i32 %x) {
+  ret i32 %x
+}
+*** IR Dump Sideways WeirdPass on f in reverse ***
+; ModuleID = 'from_c'
+define i32 @f(i32 %x) {
+  ret i32 0
+}
+"""
+
+
+class TestAnUnknownBanner(unittest.TestCase):
+    """Refuse to carry on rather than glue an unread line onto a frame."""
+
+    STRANGE = PRINT_CHANGED_STRANGE
+
+    def source(self):
+        return ir.Module.from_ll(START_IR, name="from_c")
+
+    def test_it_stops_and_quotes_the_line(self):
+        with self.assertRaises(ValueError) as caught:
+            pipeline._parse(self.STRANGE, "default<O2>", self.source())
+        self.assertIn("Dump Sideways WeirdPass", str(caught.exception))
+
+    def test_it_says_how_to_carry_on_anyway(self):
+        with self.assertRaises(ValueError) as caught:
+            pipeline._parse(self.STRANGE, "default<O2>", self.source())
+        self.assertIn("strict=False", str(caught.exception))
+
+    def test_turning_the_check_off_gets_you_the_old_behaviour(self):
+        t = pipeline._parse(self.STRANGE, "default<O2>", self.source(), strict=False)
+        self.assertEqual(t.steps, [])
+
+    def test_the_shapes_we_do_know_pass_the_check(self):
+        for sample in (PRINT_CHANGED, PRINT_CHANGED_DELETED):
+            pipeline._parse(sample, "default<O2>", self.source())
+
+
 class TestHints(unittest.TestCase):
     def make(self, stderr: str, argv: list[str] | None = None) -> proc.Result:
         return proc.Result("opt", argv or ["opt"], 1, "", stderr, 0.0)
@@ -807,6 +927,27 @@ class TestTapeAgainstRealLLVM(unittest.TestCase):
         t = self.module.tape("mem2reg")
         self.assertEqual([s.scope for s in t.steps], ["f", "g"])
 
+    def test_the_pass_that_deleted_the_loop_is_on_the_tape(self):
+        # LoopDeletion is what removes the loop in g once IndVarSimplify has
+        # worked out the closed form. It prints one line and no IR, so for a
+        # while it was not on the tape at all and the deletion looked like it
+        # was GVN's doing.
+        step = self.tape.step("LoopDeletion")
+        self.assertTrue(step.invalidated)
+        self.assertTrue(step.changed)
+        self.assertEqual(step.ir, "")
+
+    def test_there_is_one_fewer_frame_than_there_are_changes(self):
+        self.assertEqual(len(self.tape.shown), len(self.tape.changed) - 1)
+        self.assertEqual(len(self.tape.frames), len(self.tape.shown) + 1)
+
+    def test_the_loop_really_is_gone_by_the_end(self):
+        # Asking LLVM rather than looking for a branch in the text, because a
+        # fully optimised function still has branches in it.
+        report = proc.run("opt", "-passes=print<loops>", "-disable-output", "-",
+                          stdin=self.tape.final.text)
+        self.assertNotIn("Loop at depth", report.stderr)
+
 
 @needs_llvm
 class TestTapeWithAPrintingPlugin(unittest.TestCase):
@@ -829,6 +970,84 @@ class TestTapeWithAPrintingPlugin(unittest.TestCase):
     def test_a_plugin_pass_is_recognised_despite_the_space_in_its_name(self):
         t = irx.Module.from_c(C_SOURCE).tape("mem2reg,count")
         self.assertTrue(any("CountInstructions" in s.name for s in t.steps))
+
+
+WHICH = "Which pass deleted the second load?"
+OPTIONS = {
+    "EarlyCSE": "It runs first and it catches the cheap redundancies.",
+    "GVN": "It can do this and it runs too late to get the chance.",
+}
+
+
+class TestGate(unittest.TestCase):
+    """A gate has to work in a renderer with no stylesheet and no kernel."""
+
+    def test_it_refuses_a_single_option(self):
+        with self.assertRaises(ValueError) as caught:
+            irx.gate(WHICH, {"EarlyCSE": "the only one"}, answer="EarlyCSE")
+        self.assertIn("coin toss", str(caught.exception))
+
+    def test_it_refuses_an_answer_that_is_not_an_option(self):
+        with self.assertRaises(ValueError) as caught:
+            irx.gate(WHICH, OPTIONS, answer="SROA")
+        self.assertIn("SROA", str(caught.exception))
+
+    def test_it_refuses_a_wrong_answer_with_no_explanation(self):
+        with self.assertRaises(ValueError) as caught:
+            irx.gate(WHICH, {**OPTIONS, "GVN": "  "}, answer="EarlyCSE")
+        self.assertIn("GVN", str(caught.exception))
+
+    def test_the_repr_does_not_give_the_answer_away(self):
+        # It is the text/plain that gets saved into the notebook, right under
+        # the question, so a reader scrolling the raw file would see it.
+        g = irx.gate(WHICH, OPTIONS, answer="EarlyCSE")
+        self.assertNotIn("EarlyCSE", repr(g))
+        self.assertIn(WHICH, repr(g))
+
+    def test_printing_it_does(self):
+        # Whereas anyone who typed print() asked for the answer.
+        g = irx.gate(WHICH, OPTIONS, answer="EarlyCSE")
+        self.assertIn("The answer is EarlyCSE.", str(g))
+        self.assertIn("It runs first", str(g))
+
+    def test_the_text_form_explains_the_wrong_answers_too(self):
+        g = irx.gate(WHICH, OPTIONS, answer="EarlyCSE")
+        self.assertIn("runs too late", str(g))
+
+    def test_the_html_has_one_radio_per_option_and_no_script(self):
+        html = irx.gate(WHICH, OPTIONS, answer="EarlyCSE")._repr_html_()
+        self.assertEqual(html.count('type="radio"'), 2)
+        self.assertNotIn("<script", html)
+        self.assertNotIn("onclick", html)
+
+    def test_the_answer_is_named_in_a_sentence_not_only_in_a_colour(self):
+        html = irx.gate(WHICH, OPTIONS, answer="EarlyCSE")._repr_html_()
+        self.assertIn("The answer is <b>EarlyCSE</b>", html)
+
+    def test_the_free_text_box_is_not_an_input(self):
+        # The option highlight counts inputs by position, so a second kind of
+        # input in the same element would shift every option by one.
+        html = irx.gate(WHICH, OPTIONS, answer="EarlyCSE")._repr_html_()
+        self.assertIn("<textarea", html)
+        self.assertEqual(html.count("<input"), 2)
+
+    def test_rendering_it_twice_gives_the_same_bytes(self):
+        first = irx.gate(WHICH, OPTIONS, answer="EarlyCSE")._repr_html_()
+        second = irx.gate(WHICH, OPTIONS, answer="EarlyCSE")._repr_html_()
+        self.assertEqual(first, second)
+
+    def test_two_gates_do_not_share_an_id(self):
+        one = irx.gate(WHICH, OPTIONS, answer="EarlyCSE")._repr_html_()
+        two = irx.gate("Something else?", OPTIONS, answer="GVN")._repr_html_()
+        self.assertNotEqual(_id_of(one), _id_of(two))
+
+    def test_a_question_with_html_in_it_is_escaped(self):
+        g = irx.gate("Does <b>this</b> escape?", OPTIONS, answer="GVN")
+        self.assertIn("&lt;b&gt;this&lt;/b&gt;", g._repr_html_())
+
+
+def _id_of(html: str) -> str:
+    return html.split('id="', 1)[1].split('"', 1)[0]
 
 
 

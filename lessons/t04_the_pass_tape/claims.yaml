@@ -1,0 +1,98 @@
+# Every factual claim in this lesson, with the evidence for it.
+# confidence is one of: observed, cited, inferred. At most three may be inferred.
+#
+# "evidence" names the cell id a reader can run to see it, or the machine it was
+# measured on. Everything marked observed here was checked on two platforms,
+# macOS arm64 with Homebrew LLVM 23.1.0 and Linux x86_64 with Ubuntu LLVM
+# 23.1.1, because the pipeline depends on the target and a claim that only holds
+# on the author's laptop is not a claim.
+claims:
+  - id: one-run-three-answers
+    claim: One opt run with --print-changed and --print-module-scope gives the ordered pass list, which passes changed the IR, and the whole module after each pass that did.
+    evidence: cell first_tape
+    citation: llvm/lib/Passes/StandardInstrumentations.cpp@llvmorg-23.1.0
+    confidence: observed
+
+  - id: five-banner-shapes
+    claim: opt writes five different "*** IR ... ***" banner shapes, and only one of them has a module underneath it.
+    evidence: cell banners
+    citation: llvm/lib/Passes/StandardInstrumentations.cpp:475-506@llvmorg-23.1.0
+    confidence: cited
+
+  - id: pass-managers-are-ignored
+    claim: opt reports pass managers and adaptors with the word "ignored", which is what lets irx leave them out of the pass count.
+    evidence: cell banners
+    citation: llvm/lib/Passes/StandardInstrumentations.cpp:503-506@llvmorg-23.1.0
+    confidence: cited
+
+  - id: earlycse-deletes-the-load
+    claim: In default<O2> the pass that deletes the duplicate load in twice is EarlyCSE, not InstCombine and not GVN.
+    evidence: cell twice_tape, and cell three_alone for the three run separately
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.1, EarlyCSE at pass 10 on both
+    confidence: observed
+
+  - id: gvn-finds-nothing-in-twice
+    claim: GVN runs on twice in default<O2> and changes nothing, because EarlyCSE has already taken the redundancy.
+    evidence: cell twice_tape
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.1, GVN at pass 45 on both, marked unchanged
+    confidence: observed
+
+  - id: all-three-can-do-it
+    claim: EarlyCSE, InstCombine and GVN each remove the duplicate load when run alone after SROA, so which one gets the job is decided by pipeline order and nothing else.
+    evidence: cell three_alone
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.1
+    confidence: observed
+
+  - id: earlycse-is-placed-to-be-early
+    claim: EarlyCSE is placed near the start of the simplification pipeline under the comment "Catch trivial redundancies", and GVN is added hundreds of lines later under "Eliminate redundancies".
+    evidence: quoted in the lesson
+    citation: llvm/lib/Passes/PassBuilderPipelines.cpp:504-510 and 779-784@llvmorg-23.1.0
+    confidence: cited
+
+  - id: instcombine-does-the-shift
+    claim: InstCombine changes twice after the load is already gone, turning "add nsw i32 %0, %0" into "shl nsw i32 %0, 1".
+    evidence: cell three_alone
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.1
+    confidence: observed
+
+  - id: loopdeletion-removes-the-loop
+    claim: In default<O2> the pass that removes the loop in gauss is LoopDeletion, not GVN, and running LoopDeletion by hand on the frame IndVarSimplify printed takes the module from 48 lines with one loop to 41 lines with none.
+    evidence: cell blame_gvn
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.1, identical line counts on both
+    confidence: observed
+
+  - id: gvn-gets-the-credit
+    claim: The tape reports a delta of minus ten lines for GVN, of which seven belong to LoopDeletion and three to GVN itself.
+    evidence: cell blame_gvn
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.1
+    confidence: observed
+
+  - id: no-dump-for-a-deleted-loop
+    claim: A loop pass that deletes its loop is reported through runAfterPassInvalidated, which takes no IR, so opt prints a banner with no module and no scope.
+    evidence: cell find_deletion shows the resulting row, with changed true and no dump
+    citation: llvm/lib/Transforms/Scalar/LoopPassManager.cpp:289-295 and llvm/lib/Passes/StandardInstrumentations.cpp:490-493@llvmorg-23.1.0
+    confidence: cited
+
+  - id: the-remark-says-so
+    claim: LoopDeletion emits the optimisation remark "Loop deleted because it is invariant", which -pass-remarks=loop-delete will show you.
+    evidence: cell remark
+    citation: llvm/lib/Transforms/Scalar/LoopDeletion.cpp:504-509@llvmorg-23.1.0
+    confidence: cited
+
+  - id: indvars-grows-the-function
+    claim: IndVarSimplify makes gauss five lines longer by writing the sum as arithmetic on n, using i33 values so the multiply cannot overflow before the shift.
+    evidence: cell first_tape, the IndVarSimplify frame
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.1, delta plus five on both
+    confidence: observed
+
+  - id: growth-enables-deletion
+    claim: The growth is what makes the deletion legal, because a loop is only deletable once nothing outside it needs the value it was computing.
+    evidence: the order of the two passes in cell blame_gvn
+    citation: llvm/lib/Transforms/Scalar/LoopDeletion.cpp:496-513@llvmorg-23.1.0 tests isLoopDead before deleting
+    confidence: inferred
+
+  - id: pass-indexes-move
+    claim: The position of a pass in the pipeline depends on the target, so the same pipeline over the same function gives 119 passes on macOS arm64 and 118 on Linux x86_64, and every claim above is written to survive that.
+    evidence: docs/diagrams/o2-passes.json records the macOS run, the Linux run was done by hand
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.1
+    confidence: observed

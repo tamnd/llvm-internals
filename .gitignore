@@ -4,6 +4,9 @@
 /.venv/
 __pycache__/
 *.pyc
+# setuptools leftovers from building the toolkit as a wheel
+build/lib/
+*.egg-info/
 
 # The toolchain tarballs a reader downloads and CI publishes. Large, and every
 # one of them is reproducible from the pin plus a recorded cmake line.
@@ -24,3 +27,6 @@ __pycache__/
 
 # build.py run --output-dir
 .build/
+
+# Tool caches
+.pytest_cache/

@@ -168,7 +168,7 @@ m.tape("default<O2>")
 
 ![The PassTape, showing SROA turning allocas into phi nodes](../docs/images/passtape.png)
 
-Click a pass and you get the diff it caused. The chips carry the line count change, so you can see at a glance that `SROA` did the heavy lifting on `g` and `GVN` deleted a loop later on. Arrow keys move along the strip.
+Click a pass and you get the diff it caused. The chips carry the line count change, so you can see at a glance that `SROA` did the heavy lifting on `g` and that `IndVarSimplify` made the function longer rather than shorter. Arrow keys move along the strip.
 
 It all comes from one `opt` run:
 
@@ -195,6 +195,36 @@ default<O2> on from_c: 203 passes ran, 20 changed the IR
 **A pass that counts is not the same as a pass that ran.** `SROA` on two functions is two steps, because that is two runs over two pieces of code. Pass managers, adaptors and the verifier are not counted at all, because they are plumbing and counting them would inflate the one number the whole thing exists to report.
 
 **A printing pass shares a stream with the dumps.** `opt` writes the frames to stderr and your `errs()` goes to the same place, so a teaching pass ends up stuck to the bottom of the frame before it. Rather than guess where the IR stops, `irx` asks `llvm-as`, which reports the line it stopped understanding on, and cuts there. This only happens when you have a plugin loaded, so a stock pipeline pays nothing for it.
+
+**One pass changes the module and leaves no picture of it.** When a loop pass deletes its own loop, `opt` has nothing left to print, so instead of a dump it writes a single line:
+
+```
+*** IR Pass LoopDeletionPass invalidated ***
+```
+
+That pass is on the tape, it counts as a change, and its panel says what happened rather than showing a diff. So a tape can have more changes than it has frames, and `tape.changed` and `tape.frames` are not the same length. `tape.shown` is the passes that both changed the module and left a dump, which is the list the frames line up with.
+
+**An `*** IR ...` line that `irx` does not recognise is an error, not a shrug.** An unrecognised banner does not announce itself, it gets swallowed into the previous frame, and the only symptom is that a few line counts are quietly wrong. The line above is exactly that bug: it went unread for a while and `LoopDeletion` was missing from every tape as a result. `tape(..., strict=False)` turns the check off if you would rather have a slightly wrong tape than none.
+
+## Guessing before looking
+
+A lesson that shows you the answer teaches less than a lesson that makes you commit to one first. `irx.gate` is a question, two to four options, and an explanation of every option including the wrong ones.
+
+```python
+irx.gate(
+    "Three passes in default<O2> can delete a repeated load. Which one deletes this one?",
+    {
+        "InstCombine": "It rewrites instruction patterns and runs first, at pass 16.",
+        "EarlyCSE": "It runs at pass 10 and its whole job is spotting the second copy of something.",
+        "GVN": "It can do this, and by the time it runs at pass 45 there is nothing left to find.",
+    },
+    answer="EarlyCSE",
+)
+```
+
+The wrong options get a real explanation too. A reader who picked the second one and is told only that they were wrong has learned the least of anybody in the room.
+
+Same rules as the tape: no JavaScript, the reveal is a `<details>`, the highlight on what you picked is a radio button and a sibling selector, and the answer is named in a sentence as well as tinted so a renderer that drops the stylesheet still tells you which one it was. Printing a gate in a terminal shows the question, the options, the answer and every explanation, because there is nowhere in plain text to hide something behind a click and pretending otherwise would make it a puzzle instead of a lesson.
 
 ## When a tool fails
 

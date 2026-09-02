@@ -1,0 +1,290 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1216" height="813" viewBox="0 -16 1216 813" role="img" aria-label="A row of 119 ticks, one per pass, with 16 of them highlighted">
+  <title>A row of 119 ticks, one per pass, with 16 of them highlighted</title>
+  <defs><marker id="head-source" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#1971c2"/></marker><marker id="head-tool" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#6741d9"/></marker><marker id="head-output" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2f9e44"/></marker><marker id="head-external" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#495057"/></marker><marker id="head-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#e8590c"/></marker><marker id="head-plain" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#1e1e1e"/></marker></defs>
+  <rect x="0" y="-16" width="1216" height="813" fill="#ffffff"/>
+  <text x="40.0" y="39.0" font-family="Helvetica, Arial, sans-serif" font-size="15" fill="#1e1e1e" text-anchor="start" xml:space="preserve">119 passes run when you type -O2 on a five line loop. 16 of them change the IR.</text>
+  <text x="40.0" y="65.0" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">One tick per pass, left to right, in the order they ran.</text>
+  <rect x="40.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="42.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="49.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="51.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="58.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="60.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="67.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="69.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="76.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="78.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="85.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="87.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="94.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="96.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="103.0" y="108.0" width="5.0" height="36.0" rx="0" fill="#e5dbff" stroke="#6741d9" stroke-width="2"/>
+  <text x="105.5" y="131.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#6741d9" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="112.0" y="108.0" width="5.0" height="36.0" rx="0" fill="#e5dbff" stroke="#6741d9" stroke-width="2"/>
+  <text x="114.5" y="131.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#6741d9" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="121.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="123.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="130.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="132.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="139.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="141.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="148.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="150.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="157.0" y="108.0" width="5.0" height="36.0" rx="0" fill="#e5dbff" stroke="#6741d9" stroke-width="2"/>
+  <text x="159.5" y="131.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#6741d9" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="166.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="168.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="175.0" y="108.0" width="5.0" height="36.0" rx="0" fill="#e5dbff" stroke="#6741d9" stroke-width="2"/>
+  <text x="177.5" y="131.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#6741d9" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="184.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="186.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="193.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="195.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="202.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="204.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="211.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="213.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="220.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="222.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="229.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="231.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="238.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="240.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="247.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="249.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="256.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="258.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="265.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="267.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="274.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="276.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="283.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="285.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="292.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="294.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="301.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="303.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="310.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="312.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="319.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="321.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="328.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="330.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="337.0" y="108.0" width="5.0" height="36.0" rx="0" fill="#e5dbff" stroke="#6741d9" stroke-width="2"/>
+  <text x="339.5" y="131.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#6741d9" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="346.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="348.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="355.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="357.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="364.0" y="108.0" width="5.0" height="36.0" rx="0" fill="#e5dbff" stroke="#6741d9" stroke-width="2"/>
+  <text x="366.5" y="131.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#6741d9" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="373.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="375.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="382.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="384.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="391.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="393.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="400.0" y="108.0" width="5.0" height="36.0" rx="0" fill="#e5dbff" stroke="#6741d9" stroke-width="2"/>
+  <text x="402.5" y="131.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#6741d9" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="409.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="411.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="418.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="420.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="427.0" y="108.0" width="5.0" height="36.0" rx="0" fill="#e5dbff" stroke="#6741d9" stroke-width="2"/>
+  <text x="429.5" y="131.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#6741d9" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="436.0" y="108.0" width="5.0" height="36.0" rx="0" fill="#e5dbff" stroke="#6741d9" stroke-width="2"/>
+  <text x="438.5" y="131.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#6741d9" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="445.0" y="108.0" width="5.0" height="36.0" rx="0" fill="#e5dbff" stroke="#6741d9" stroke-width="2"/>
+  <text x="447.5" y="131.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#6741d9" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="454.0" y="108.0" width="5.0" height="36.0" rx="0" fill="#e5dbff" stroke="#6741d9" stroke-width="2"/>
+  <text x="456.5" y="131.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#6741d9" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="463.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="465.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="472.0" y="108.0" width="5.0" height="36.0" rx="0" fill="#e5dbff" stroke="#6741d9" stroke-width="2"/>
+  <text x="474.5" y="131.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#6741d9" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="481.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="483.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="490.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="492.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="499.0" y="108.0" width="5.0" height="36.0" rx="0" fill="#ffe8cc" stroke="#e8590c" stroke-width="2"/>
+  <text x="501.5" y="131.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#e8590c" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="508.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="510.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="517.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="519.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="526.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="528.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="535.0" y="108.0" width="5.0" height="36.0" rx="0" fill="#e5dbff" stroke="#6741d9" stroke-width="2"/>
+  <text x="537.5" y="131.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#6741d9" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="544.0" y="108.0" width="5.0" height="36.0" rx="0" fill="#e5dbff" stroke="#6741d9" stroke-width="2"/>
+  <text x="546.5" y="131.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#6741d9" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="553.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="555.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="562.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="564.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="571.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="573.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="580.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="582.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="589.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="591.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="598.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="600.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="607.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="609.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="616.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="618.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="625.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="627.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="634.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="636.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="643.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="645.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="652.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="654.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="661.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="663.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="670.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="672.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="679.0" y="108.0" width="5.0" height="36.0" rx="0" fill="#e5dbff" stroke="#6741d9" stroke-width="2"/>
+  <text x="681.5" y="131.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#6741d9" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="688.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="690.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="697.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="699.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="706.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="708.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="715.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="717.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="724.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="726.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="733.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="735.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="742.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="744.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="751.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="753.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="760.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="762.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="769.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="771.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="778.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="780.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="787.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="789.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="796.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="798.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="805.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="807.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="814.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="816.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="823.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="825.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="832.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="834.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="841.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="843.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="850.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="852.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="859.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="861.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="868.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="870.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="877.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="879.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="886.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="888.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="895.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="897.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="904.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="906.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="913.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="915.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="922.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="924.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="931.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="933.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="940.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="942.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="949.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="951.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="958.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="960.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="967.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="969.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="976.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="978.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="985.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="987.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="994.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="996.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="1003.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="1005.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="1012.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="1014.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="1021.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="1023.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="1030.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="1032.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="1039.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="1041.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="1048.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="1050.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="1057.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="1059.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="1066.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="1068.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="1075.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="1077.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="1084.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="1086.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="1093.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="1095.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <rect x="1102.0" y="118.0" width="5.0" height="26.0" rx="0" fill="#f1f3f5" stroke="#495057" stroke-width="2"/>
+  <text x="1104.5" y="136.6" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#495057" text-anchor="middle" xml:space="preserve"></text>
+  <text x="105.5" y="103.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#1e1e1e" text-anchor="middle" xml:space="preserve">8</text>
+  <text x="114.5" y="89.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#1e1e1e" text-anchor="middle" xml:space="preserve">9</text>
+  <text x="159.5" y="103.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#1e1e1e" text-anchor="middle" xml:space="preserve">14</text>
+  <text x="177.5" y="103.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#1e1e1e" text-anchor="middle" xml:space="preserve">16</text>
+  <text x="339.5" y="103.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#1e1e1e" text-anchor="middle" xml:space="preserve">34</text>
+  <text x="366.5" y="103.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#1e1e1e" text-anchor="middle" xml:space="preserve">37</text>
+  <text x="402.5" y="103.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#1e1e1e" text-anchor="middle" xml:space="preserve">41</text>
+  <text x="429.5" y="103.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#1e1e1e" text-anchor="middle" xml:space="preserve">44</text>
+  <text x="438.5" y="89.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#1e1e1e" text-anchor="middle" xml:space="preserve">45</text>
+  <text x="447.5" y="103.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#1e1e1e" text-anchor="middle" xml:space="preserve">46</text>
+  <text x="456.5" y="89.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#1e1e1e" text-anchor="middle" xml:space="preserve">47</text>
+  <text x="474.5" y="103.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#1e1e1e" text-anchor="middle" xml:space="preserve">49</text>
+  <text x="501.5" y="103.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#1e1e1e" text-anchor="middle" xml:space="preserve">52</text>
+  <text x="537.5" y="103.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#1e1e1e" text-anchor="middle" xml:space="preserve">56</text>
+  <text x="546.5" y="89.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#1e1e1e" text-anchor="middle" xml:space="preserve">57</text>
+  <text x="681.5" y="103.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="11" fill="#1e1e1e" text-anchor="middle" xml:space="preserve">72</text>
+  <text x="40.0" y="164.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="#1e1e1e" text-anchor="start" xml:space="preserve">first pass</text>
+  <text x="1111.0" y="164.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="#1e1e1e" text-anchor="end" xml:space="preserve">last pass</text>
+  <text x="40.0" y="195.0" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">the ones that did something</text>
+  <text x="40.0" y="219.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">   8  SimplifyCFG                -3 lines</text>
+  <text x="40.0" y="239.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">   9  SROA                       -12 lines</text>
+  <text x="40.0" y="259.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">  14  GlobalOpt                  same length</text>
+  <text x="40.0" y="279.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">  16  InstCombine                same length</text>
+  <text x="40.0" y="299.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">  34  Reassociate                same length</text>
+  <text x="40.0" y="319.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">  37  LCSSA                      +1 line</text>
+  <text x="40.0" y="339.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">  41  LoopRotate                 +5 lines</text>
+  <text x="40.0" y="359.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">  44  SimplifyCFG                -7 lines</text>
+  <text x="40.0" y="379.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">  45  InstCombine                same length</text>
+  <text x="40.0" y="399.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">  46  LoopSimplify               +6 lines</text>
+  <text x="40.0" y="419.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">  47  LCSSA                      +1 line</text>
+  <text x="40.0" y="439.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">  49  IndVarSimplify             +5 lines</text>
+  <text x="40.0" y="459.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#e8590c" text-anchor="start" xml:space="preserve">  52  LoopDeletion               deleted the loop, no dump</text>
+  <text x="40.0" y="479.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">  56  GVN                        -10 lines</text>
+  <text x="40.0" y="499.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">  57  SCCP                       same length</text>
+  <text x="40.0" y="519.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">  72  PostOrderFunctionAttrs     same length</text>
+  <text x="40.0" y="557.0" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">The orange one is the pass that removed the loop, and it is the only one with nothing to</text>
+  <text x="40.0" y="573.2" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">show you. opt prints the IR after a pass by asking the loop it just ran on to print itself,</text>
+  <text x="40.0" y="589.5" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">and by then there was no loop. It writes one line instead and no IR at all.</text>
+  <text x="40.0" y="623.0" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">Look at the pass before it. IndVarSimplify made the function five lines longer, which is</text>
+  <text x="40.0" y="639.2" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">the opposite of what an optimiser is supposed to do, and it is what made the deletion</text>
+  <text x="40.0" y="655.5" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">possible. Getting shorter is not the same thing as making progress.</text>
+  <text x="40.0" y="689.0" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">The grey ticks are not wasted work either. Most of them are a pass looking for a pattern</text>
+  <text x="40.0" y="705.2" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">that is not in this function, and the same pipeline has to be right for five lines and for</text>
+  <text x="40.0" y="721.5" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">five thousand. Take the loop out and it drops to 108 passes with 7 changes.</text>
+  <text x="40.0" y="754.0" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="#e8590c" text-anchor="start" xml:space="preserve">Measured with Homebrew LLVM version 23.1.0 on Darwin arm64, pipeline default&lt;O2&gt;.</text>
+</svg>

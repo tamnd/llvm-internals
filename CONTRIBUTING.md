@@ -31,7 +31,7 @@ A pre commit hook rebuilds notebooks so a committed `.ipynb` is never out of syn
 
 ## Prose rules
 
-These are checked by `tools/prosecheck.py` where they can be, and by a human where they cannot.
+These are checked by `tools/prosecheck.py` where they can be, and by a human where they cannot. It reads every `.md` file and the markdown cells of every `lessons/<id>/lesson.py`, so the rules apply to lesson prose in exactly the same way they apply to this page. Code cells are code and it leaves them alone.
 
 **No em dashes.** Use a comma, a full stop, or brackets. The checker rejects them.
 
@@ -62,6 +62,8 @@ These are checked by `tools/prosecheck.py` where they can be, and by a human whe
 | Blueprint | no cap |
 
 A lesson that wants to be longer is two lessons. There is no exception for the interesting ones, because "this one is special" is how caps die.
+
+The cell cap is about what a reader has to read. A cell built with `include=` is a grader they call and never read, so it is reviewed as the module it comes from, with tests, and it is not measured against this cap. That is the only carve out, and it is here because the alternative is a grader made worse at its job to fit inside a box nobody was going to open.
 
 ## Claims
 

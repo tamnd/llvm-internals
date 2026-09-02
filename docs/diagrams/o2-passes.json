@@ -1,0 +1,94 @@
+{
+  "llvm": "Homebrew LLVM version 23.1.0",
+  "machine": "Darwin arm64",
+  "pipeline": "default<O2>",
+  "loop": {
+    "total": 119,
+    "changed": [
+      {
+        "index": 8,
+        "name": "SimplifyCFG",
+        "delta": -3
+      },
+      {
+        "index": 9,
+        "name": "SROA",
+        "delta": -12
+      },
+      {
+        "index": 14,
+        "name": "GlobalOpt",
+        "delta": 0
+      },
+      {
+        "index": 16,
+        "name": "InstCombine",
+        "delta": 0
+      },
+      {
+        "index": 34,
+        "name": "Reassociate",
+        "delta": 0
+      },
+      {
+        "index": 37,
+        "name": "LCSSA",
+        "delta": 1
+      },
+      {
+        "index": 41,
+        "name": "LoopRotate",
+        "delta": 5
+      },
+      {
+        "index": 44,
+        "name": "SimplifyCFG",
+        "delta": -7
+      },
+      {
+        "index": 45,
+        "name": "InstCombine",
+        "delta": 0
+      },
+      {
+        "index": 46,
+        "name": "LoopSimplify",
+        "delta": 6
+      },
+      {
+        "index": 47,
+        "name": "LCSSA",
+        "delta": 1
+      },
+      {
+        "index": 49,
+        "name": "IndVarSimplify",
+        "delta": 5
+      },
+      {
+        "index": 52,
+        "name": "LoopDeletion",
+        "delta": null
+      },
+      {
+        "index": 56,
+        "name": "GVN",
+        "delta": -10
+      },
+      {
+        "index": 57,
+        "name": "SCCP",
+        "delta": 0
+      },
+      {
+        "index": 72,
+        "name": "PostOrderFunctionAttrs",
+        "delta": 0
+      }
+    ]
+  },
+  "plain": {
+    "total": 108,
+    "changed": 7
+  }
+}

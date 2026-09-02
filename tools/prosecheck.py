@@ -16,6 +16,11 @@ Four rules:
 
 A line ending in the comment <!-- prose-ok --> is exempt from em-dash and
 banned, which is how a document quotes a rule in order to state it.
+
+Markdown files are the obvious target and they are not the important one. Most
+of the prose in this repository is going to live in the markdown cells of
+lessons/<id>/lesson.py, so those get read too. The rules only apply to the
+markdown cells; code cells are code.
 """
 
 from __future__ import annotations
@@ -38,12 +43,25 @@ BANNED = re.compile(
 # block wrap for their own reasons.
 NOT_PROSE = re.compile(r"^(\s*$|#{1,6} |\s*[-*+] |\s*\d+\. |\s*>|\||\s{4,}|\[\^)")
 
+# A cell marker in a lesson, and whether the cell it opens is markdown.
+CELL = re.compile(r"^# %%(?P<options>.*)$")
 
-def check(path: pathlib.Path) -> list[str]:
+NOISE = {
+    ".git", ".venv", ".pytest_cache", ".mypy_cache", ".ruff_cache",
+    "__pycache__", "node_modules", "build", "site",
+}
+
+
+def scan(path: pathlib.Path, lines: list[tuple[int, str]]) -> list[str]:
+    """Apply the four rules to numbered lines of markdown.
+
+    The lines carry their own numbers rather than being enumerated here, because
+    the prose in a lesson is a handful of stretches of a bigger file and a
+    problem has to point at the line somebody has to go and edit.
+    """
     problems: list[str] = []
-    lines = path.read_text(encoding="utf-8").splitlines()
     fenced = False
-    for i, line in enumerate(lines, start=1):
+    for position, (number, line) in enumerate(lines):
         stripped = line.strip()
         if stripped.startswith("```") or stripped.startswith("~~~"):
             fenced = not fenced
@@ -54,15 +72,15 @@ def check(path: pathlib.Path) -> list[str]:
         exempt = ALLOW in line
 
         if EM_DASH in line and not exempt:
-            problems.append(f"{path}:{i}: em dash")
+            problems.append(f"{path}:{number}: em dash")
         if not exempt:
             hit = BANNED.search(line)
             if hit:
-                problems.append(f"{path}:{i}: banned word {hit.group(0)!r}")
+                problems.append(f"{path}:{number}: banned word {hit.group(0)!r}")
         if line != line.rstrip():
-            problems.append(f"{path}:{i}: trailing whitespace")
+            problems.append(f"{path}:{number}: trailing whitespace")
         if "\t" in line:
-            problems.append(f"{path}:{i}: tab")
+            problems.append(f"{path}:{number}: tab")
 
         # The wrap rule. A prose line followed by another prose line means the
         # paragraph got hard wrapped, so the sentence is broken across a
@@ -70,13 +88,60 @@ def check(path: pathlib.Path) -> list[str]:
         # is the one somebody has to go and join.
         if NOT_PROSE.match(line):
             continue
-        nxt = lines[i] if i < len(lines) else ""
+        nxt = lines[position + 1][1] if position + 1 < len(lines) else ""
         if nxt.strip().startswith("```") or nxt.strip().startswith("~~~"):
             continue
         if not NOT_PROSE.match(nxt):
-            problems.append(f"{path}:{i}: hard wrapped paragraph, join it onto one line")
+            problems.append(f"{path}:{number}: hard wrapped paragraph, join it onto one line")
 
     return problems
+
+
+def markdown_lines(path: pathlib.Path) -> list[tuple[int, str]]:
+    return list(enumerate(path.read_text(encoding="utf-8").splitlines(), start=1))
+
+
+def lesson_lines(path: pathlib.Path) -> list[tuple[int, str]]:
+    """The markdown cells of a lesson, with their line numbers in the lesson.
+
+    Read textually instead of through build.py. The parser strips the comment
+    prefix and trims blank lines, and a prose error that points two lines away
+    from the sentence it is about is an error people learn to ignore.
+    """
+    out: list[tuple[int, str]] = []
+    inside = False
+    for number, raw in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        mark = CELL.match(raw)
+        if mark:
+            inside = mark.group("options").strip().startswith("[markdown]")
+            # A blank between cells, so the wrap rule does not read the first
+            # line of one cell as a continuation of the last line of the one
+            # before it. Line 0 never gets reported, because blank is not prose.
+            out.append((0, ""))
+            continue
+        if not inside:
+            continue
+        if raw.startswith("# "):
+            out.append((number, raw[2:]))
+        elif raw.rstrip() in ("", "#"):
+            out.append((number, ""))
+        else:
+            out.append((number, raw))
+    return out
+
+
+def check(path: pathlib.Path) -> list[str]:
+    read = lesson_lines if path.suffix == ".py" else markdown_lines
+    return scan(path, read(path))
+
+
+def ours(path: pathlib.Path) -> bool:
+    """Skip machine generated directories.
+
+    Named one by one rather than skipping every dot directory, because .github
+    holds the pull request template and that is prose somebody wrote.
+    """
+    return not (NOISE & set(path.parts))
 
 
 def main() -> int:
@@ -88,8 +153,10 @@ def main() -> int:
     for raw in args.paths:
         p = pathlib.Path(raw)
         if p.is_dir():
-            targets.extend(sorted(q for q in p.rglob("*.md") if ".git" not in q.parts))
-        elif p.suffix == ".md":
+            found = [q for q in p.rglob("*.md") if ours(q)]
+            found += [q for q in p.rglob("lesson.py") if ours(q)]
+            targets.extend(sorted(set(found)))
+        elif p.suffix == ".md" or p.name == "lesson.py":
             targets.append(p)
 
     problems: list[str] = []

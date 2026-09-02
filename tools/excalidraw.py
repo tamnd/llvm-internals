@@ -76,9 +76,15 @@ class Scene:
         font: int = FONT_HAND,
         size: int = 16,
         shape: str = "rectangle",
+        radius: float | None = None,
     ) -> tuple[float, float, float, float]:
         stroke, fill = PALETTE[style]
         text_id = f"{key}-text"
+        # A corner radius of 8 on a box 5 pixels wide is a circle, and a row of
+        # those reads as a string of zeroes rather than as a row of ticks.
+        if radius is None:
+            radius = 8 if shape == "rectangle" else min(w, h) / 2
+        rounded = shape == "rectangle" and radius > 0
         self._element(
             {
                 "id": key,
@@ -90,7 +96,7 @@ class Scene:
                 "strokeColor": stroke,
                 "backgroundColor": fill,
                 "fillStyle": "solid",
-                "roundness": {"type": 3} if shape == "rectangle" else None,
+                "roundness": {"type": 3} if rounded else None,
                 "boundElements": [{"id": text_id, "type": "text"}],
             }
         )
@@ -115,7 +121,6 @@ class Scene:
             }
         )
 
-        radius = "8" if shape == "rectangle" else str(min(w, h) / 2)
         svg_fill = "none" if fill == "transparent" else fill
         if shape == "ellipse":
             self._svg.append(
