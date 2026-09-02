@@ -90,16 +90,14 @@ jobs:
         run: python3 -m unittest tests.test_pin -v
       # A skip would mean the install above quietly did not work, and the suite
       # would sit there green while testing none of the interesting half, so a
-      # skip fails the job.
+      # skip fails the job. tools/skipcheck.sh has the one exception, which is
+      # Alive2 and goes away with issue #3.
       - name: run the toolkit tests, and insist none of them skip
         working-directory: toolkit
         run: |
           set -euo pipefail
           python3 -m unittest discover -s tests -t . -v 2>&1 | tee "$RUNNER_TEMP/result.txt"
-          if grep -q "skipped" "$RUNNER_TEMP/result.txt"; then
-            echo "Something skipped, which means the pinned LLVM is not really there."
-            exit 1
-          fi
+          bash "$GITHUB_WORKSPACE/tools/skipcheck.sh" "$RUNNER_TEMP/result.txt"
       # Boss fight graders, which need opt, clang and lli, so they run here
       # rather than in the build job. Same rule about skips: a grader test that
       # skipped looks exactly like one that passed.
@@ -107,10 +105,7 @@ jobs:
         run: |
           set -euo pipefail
           python3 -m unittest tests.test_graders -v 2>&1 | tee "$RUNNER_TEMP/graders.txt"
-          if grep -q "skipped" "$RUNNER_TEMP/graders.txt"; then
-            echo "The grader tests skipped, so no grader was actually checked."
-            exit 1
-          fi
+          bash tools/skipcheck.sh "$RUNNER_TEMP/graders.txt"
 
   # Workflow files get the same treatment as everything else here. actionlint
   # catches the shell and expression mistakes, zizmor catches the security ones,
