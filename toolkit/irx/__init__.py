@@ -24,10 +24,12 @@ from __future__ import annotations
 
 from . import env as _env
 from . import magic as _magic
+from . import pipeline
 from . import plugin
 from .env import Env, cpu_count, describe, detect
 from .ir import Diff, Module, has_pass, highlight, passes
 from .magic import load_ipython_extension
+from .pipeline import Step, Tape, tape
 from .plugin import Plugin
 from .proc import Result, ToolError, run, version
 from .toolchain import Toolchain, ToolchainError, current, path_to
@@ -41,6 +43,8 @@ __all__ = [
     "Module",
     "Plugin",
     "Result",
+    "Step",
+    "Tape",
     "ToolError",
     "Toolchain",
     "ToolchainError",
@@ -55,8 +59,10 @@ __all__ = [
     "load_ipython_extension",
     "passes",
     "path_to",
+    "pipeline",
     "plugin",
     "run",
+    "tape",
     "version",
     "where",
 ]

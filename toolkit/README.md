@@ -157,6 +157,45 @@ A few details that took some finding:
 
 **Rebuilds are cached on content.** The key covers the source, the LLVM version and the flags, so editing the cell recompiles and rerunning an unchanged cell costs nothing. In a lesson where somebody runs the same cell thirty times, only the edits are paid for.
 
+## Watching a whole pipeline
+
+A before and after tells you what `-O2` did. It does not tell you that `-O2` ran two hundred passes to do it and that twenty of them were responsible. That ratio is the most useful thing to know about the middle end and it is invisible until you look, so `tape` keeps every step of a run instead of only the answer.
+
+```python
+m = irx.Module.from_c(source)
+m.tape("default<O2>")
+```
+
+![The PassTape, showing SROA turning allocas into phi nodes](../docs/images/passtape.png)
+
+Click a pass and you get the diff it caused. The chips carry the line count change, so you can see at a glance that `SROA` did the heavy lifting on `g` and `GVN` deleted a loop later on. Arrow keys move along the strip.
+
+It all comes from one `opt` run:
+
+```
+opt -passes=default<O2> --print-changed --print-module-scope -S -
+```
+
+`--print-changed` dumps the module after a pass that changed something and prints a one line note for every pass that did not, which is where both halves of "203 passes ran, 20 changed the IR" come from. `--print-module-scope` makes every dump the whole module rather than only the function a function pass ran on, so consecutive frames are comparable and the diff between them means something. Nothing here parses IR. It splits `opt`'s output on `opt`'s own headers and everything after that is `difflib` on text.
+
+Outside a notebook you get the same information as a table:
+
+```
+default<O2> on from_c: 203 passes ran, 20 changed the IR
+
+     9  SROA                       f                       -7 lines
+    13  SimplifyCFG                g                       -3 lines
+    14  SROA                       g                       -12 lines
+    19  GlobalOpt                  [module]                same length
+    ...
+```
+
+**There is no JavaScript in the widget.** Colab renders cell output inside a sandbox, JupyterLite has no kernel to call back into, and the published site is static HTML that nobody will ever rerun. A hidden radio button per frame and a sibling selector is the one mechanism all of those agree on, and it keeps working in a saved notebook years later. If a renderer strips the stylesheet, which GitHub does, what is left is the first frame and a readable list of pass names with their line counts rather than twenty modules stacked on top of each other.
+
+**A pass that counts is not the same as a pass that ran.** `SROA` on two functions is two steps, because that is two runs over two pieces of code. Pass managers, adaptors and the verifier are not counted at all, because they are plumbing and counting them would inflate the one number the whole thing exists to report.
+
+**A printing pass shares a stream with the dumps.** `opt` writes the frames to stderr and your `errs()` goes to the same place, so a teaching pass ends up stuck to the bottom of the frame before it. Rather than guess where the IR stops, `irx` asks `llvm-as`, which reports the line it stopped understanding on, and cuts there. This only happens when you have a plugin loaded, so a stock pipeline pays nothing for it.
+
 ## When a tool fails
 
 The default subprocess failure is `CalledProcessError: returned non-zero exit status 1`, which tells a reader who has never run `opt` before absolutely nothing. `irx` raises `ToolError` instead, with the command, the real stderr, and where possible a sentence about what to do:

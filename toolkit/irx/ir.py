@@ -305,6 +305,15 @@ class Module:
         path.write_text(self.text, encoding="utf-8")
         return path
 
+    def tape(self, passes: str, *extra: str):
+        """Run a pipeline and keep every step, rather than only the answer.
+
+        Render it in a cell to scrub through the run. See `irx.pipeline`.
+        """
+        from .pipeline import tape
+
+        return tape(self, passes, *extra)
+
     # -- comparing two of them -----------------------------------------------
 
     def diff(self, other: "Module", context: int = 3) -> "Diff":
