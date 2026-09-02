@@ -1,0 +1,77 @@
+# Every factual claim in this lesson, with the evidence for it.
+# confidence is one of: observed, cited, inferred. At most three may be inferred.
+#
+# "evidence" names the cell id a reader can run to see it, or the machine it was
+# measured on. Timings were taken on macOS arm64 with Homebrew LLVM 23.1.0 and
+# alive-tv built from AliveToolkit/alive2 at a68009c9 against that same LLVM.
+claims:
+  - id: clang-folds-one-and-not-the-other
+    claim: At -O1 clang turns `a > 0 && b > 0` into a single `and i1` and leaves `a > 0 && (a << b) > 5` as a `select i1`.
+    evidence: cell two_shapes
+    citation: llvm/lib/Transforms/InstCombine/InstCombineSelect.cpp:3754-3806@llvmorg-23.1.0
+    confidence: observed
+
+  - id: shl-past-the-width-is-poison
+    claim: A shift whose count is equal to or larger than the width of the value being shifted produces poison, which is why %sh in this lesson can be poison.
+    evidence: cell check
+    citation: llvm/docs/LangRef.md:11170-11173@llvmorg-23.1.0
+    confidence: cited
+
+  - id: the-naive-fold-is-wrong
+    claim: Replacing `select i1 %ok, i1 %big, i1 false` with `and i1 %ok, %big` is not a valid refinement, and Alive2 gives a = 0, b = 32 as the input that breaks it.
+    evidence: cell check
+    confidence: observed
+
+  - id: the-counterexample-is-invisible-at-runtime
+    claim: The original and the naive fold print the same answer for every one of the six test inputs, including the counterexample a = 0, b = 32, because poison is not a value lli can produce or observe.
+    evidence: cell tests
+    confidence: observed
+
+  - id: refinement-runs-one-way
+    claim: The and version can be replaced by the select version and Alive2 verifies it, which is the same pair of files that failed in the other direction.
+    evidence: cell backwards
+    confidence: observed
+
+  - id: freeze-fixes-it
+    claim: Freezing the true arm before the `and` makes the fold verify, in under a tenth of a second.
+    evidence: cell check2
+    citation: llvm/docs/LangRef.md:13436@llvmorg-23.1.0
+    confidence: observed
+
+  - id: instcombine-guards-this-fold
+    claim: InstCombine performs both this fold and its `or` mirror only when impliesPoisonOrCond proves the arm cannot be poison, and the comment above the pair says so in as many words.
+    evidence: cell instcombine
+    citation: llvm/lib/Transforms/InstCombine/InstCombineSelect.cpp:3754-3806@llvmorg-23.1.0
+    confidence: cited
+
+  - id: instcombine-takes-both-branches
+    claim: Swapping the `shl` for an `add` with no nsw makes real instcombine perform the fold, and putting the `shl` back makes it decline again.
+    evidence: cell instcombine
+    confidence: observed
+
+  - id: alive2-is-bounded
+    claim: Alive2 finds the counterexample for the wrong sdiv fold at every width in hundredths of a second, and proving the correct version cliffs between i8, which it does in about 0.04s, and i32, where it exhausts a five second budget.
+    evidence: cell bound, and docs/probes/alive.md for the wider sweep
+    confidence: observed
+
+  - id: a-timeout-is-not-a-pass
+    claim: A timeout is a fourth answer alongside correct, wrong and error, and it means nothing was proved in either direction.
+    evidence: cell bound
+    citation: toolkit/irx/verify.py and toolkit/tests/test_verify.py
+    confidence: observed
+
+  - id: the-plugin-header-moved
+    claim: The pass plugin header is llvm/Plugins/PassPlugin.h in LLVM 23, not llvm/Passes/PassPlugin.h.
+    evidence: cell plugin
+    citation: llvm/include/llvm/Plugins/PassPlugin.h@llvmorg-23.1.0
+    confidence: observed
+
+  - id: two-plugins-need-internal-linkage
+    claim: Both plugins in this lesson are loaded into one opt process, and without an anonymous namespace the second pass class resolves to the first one's symbols and silently runs the wrong code.
+    evidence: measured on macOS arm64 while writing this lesson, which is how the bug was found
+    confidence: observed
+
+  - id: the-plugin-cell-is-fast
+    claim: Each %%irxplug cell compiles and loads in under two seconds, well inside the twenty second budget the lesson was designed against.
+    evidence: cell plugin, cell plugin2
+    confidence: observed

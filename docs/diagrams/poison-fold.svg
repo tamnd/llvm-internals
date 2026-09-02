@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="953" height="721" viewBox="20 -16 953 721" role="img" aria-label="Why folding select into and is wrong when an arm can be poison">
+  <title>Why folding select into and is wrong when an arm can be poison</title>
+  <defs><marker id="head-source" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#1971c2"/></marker><marker id="head-tool" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#6741d9"/></marker><marker id="head-output" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#2f9e44"/></marker><marker id="head-external" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#495057"/></marker><marker id="head-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#e8590c"/></marker><marker id="head-plain" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#1e1e1e"/></marker></defs>
+  <rect x="20" y="-16" width="953" height="721" fill="#ffffff"/>
+  <text x="60" y="38.0" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#1e1e1e" text-anchor="start" xml:space="preserve">both(a = 0, b = 32). Shifting a 32 bit value by 32 is poison in both versions.</text>
+  <text x="60" y="55.5" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#1e1e1e" text-anchor="start" xml:space="preserve">The question is what happens next, and the two versions disagree.</text>
+  <rect x="60" y="84" width="300" height="40" rx="8" fill="none" stroke="#1e1e1e" stroke-width="2"/>
+  <text x="210.0" y="108.9" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#1e1e1e" text-anchor="middle" xml:space="preserve">what you wrote</text>
+  <rect x="60" y="140" width="300" height="52" rx="8" fill="#d0ebff" stroke="#1971c2" stroke-width="2"/>
+  <text x="210.0" y="162.4" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#1971c2" text-anchor="middle" xml:space="preserve">%ok = icmp sgt i32 %a, 0</text>
+  <text x="210.0" y="178.7" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#1971c2" text-anchor="middle" xml:space="preserve">false</text>
+  <rect x="60" y="212" width="300" height="52" rx="8" fill="#ffe8cc" stroke="#e8590c" stroke-width="2"/>
+  <text x="210.0" y="234.4" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#e8590c" text-anchor="middle" xml:space="preserve">%sh = shl i32 %a, %b</text>
+  <text x="210.0" y="250.7" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#e8590c" text-anchor="middle" xml:space="preserve">poison</text>
+  <line x1="210.0" y1="194" x2="210.0" y2="208" stroke="#1e1e1e" stroke-width="2" marker-end="url(#head-plain)"/>
+  <rect x="60" y="284" width="300" height="52" rx="8" fill="#ffe8cc" stroke="#e8590c" stroke-width="2"/>
+  <text x="210.0" y="306.4" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#e8590c" text-anchor="middle" xml:space="preserve">%big = icmp sgt i32 %sh, 5</text>
+  <text x="210.0" y="322.7" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#e8590c" text-anchor="middle" xml:space="preserve">poison</text>
+  <line x1="210.0" y1="266" x2="210.0" y2="280" stroke="#1e1e1e" stroke-width="2" marker-end="url(#head-plain)"/>
+  <rect x="60" y="356" width="300" height="52" rx="8" fill="#d3f9d8" stroke="#2f9e44" stroke-width="2"/>
+  <text x="210.0" y="378.4" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#2f9e44" text-anchor="middle" xml:space="preserve">%r = select i1 %ok, i1 %big, i1 false</text>
+  <text x="210.0" y="394.7" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#2f9e44" text-anchor="middle" xml:space="preserve">false</text>
+  <line x1="210.0" y1="338" x2="210.0" y2="352" stroke="#1e1e1e" stroke-width="2" marker-end="url(#head-plain)"/>
+  <rect x="460" y="84" width="300" height="40" rx="8" fill="none" stroke="#1e1e1e" stroke-width="2"/>
+  <text x="610.0" y="108.9" font-family="Helvetica, Arial, sans-serif" font-size="14" fill="#1e1e1e" text-anchor="middle" xml:space="preserve">what your fold produced</text>
+  <rect x="460" y="140" width="300" height="52" rx="8" fill="#d0ebff" stroke="#1971c2" stroke-width="2"/>
+  <text x="610.0" y="162.4" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#1971c2" text-anchor="middle" xml:space="preserve">%ok = icmp sgt i32 %a, 0</text>
+  <text x="610.0" y="178.7" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#1971c2" text-anchor="middle" xml:space="preserve">false</text>
+  <rect x="460" y="212" width="300" height="52" rx="8" fill="#ffe8cc" stroke="#e8590c" stroke-width="2"/>
+  <text x="610.0" y="234.4" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#e8590c" text-anchor="middle" xml:space="preserve">%sh = shl i32 %a, %b</text>
+  <text x="610.0" y="250.7" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#e8590c" text-anchor="middle" xml:space="preserve">poison</text>
+  <line x1="610.0" y1="194" x2="610.0" y2="208" stroke="#1e1e1e" stroke-width="2" marker-end="url(#head-plain)"/>
+  <rect x="460" y="284" width="300" height="52" rx="8" fill="#ffe8cc" stroke="#e8590c" stroke-width="2"/>
+  <text x="610.0" y="306.4" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#e8590c" text-anchor="middle" xml:space="preserve">%big = icmp sgt i32 %sh, 5</text>
+  <text x="610.0" y="322.7" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#e8590c" text-anchor="middle" xml:space="preserve">poison</text>
+  <line x1="610.0" y1="266" x2="610.0" y2="280" stroke="#1e1e1e" stroke-width="2" marker-end="url(#head-plain)"/>
+  <rect x="460" y="356" width="300" height="52" rx="8" fill="#ffe8cc" stroke="#e8590c" stroke-width="2"/>
+  <text x="610.0" y="378.4" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#e8590c" text-anchor="middle" xml:space="preserve">%r = and i1 %ok, %big</text>
+  <text x="610.0" y="394.7" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="13" fill="#e8590c" text-anchor="middle" xml:space="preserve">poison</text>
+  <line x1="610.0" y1="338" x2="610.0" y2="352" stroke="#1e1e1e" stroke-width="2" marker-end="url(#head-plain)"/>
+  <text x="60" y="437.0" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">select only reads the arm the condition picked.</text>
+  <text x="60" y="453.2" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">The condition is false, so the poison arm is never read.</text>
+  <text x="460" y="437.0" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#e8590c" text-anchor="start" xml:space="preserve">and reads both operands, every time.</text>
+  <text x="460" y="453.2" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#e8590c" text-anchor="start" xml:space="preserve">Poison in either one poisons the result.</text>
+  <text x="410.0" y="505.0" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#2f9e44" text-anchor="middle" xml:space="preserve">replacing the and with the select would be a legal rewrite</text>
+  <line x1="500" y1="516" x2="320" y2="516" stroke="#2f9e44" stroke-width="2" marker-end="url(#head-output)"/>
+  <text x="410.0" y="561.0" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#e8590c" text-anchor="middle" xml:space="preserve">replacing the select with the and is the one you did, and it is not</text>
+  <line x1="320" y1="572" x2="500" y2="572" stroke="#e8590c" stroke-width="2" stroke-dasharray="7 5" marker-end="url(#head-warn)"/>
+  <text x="60" y="629.0" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">A rewrite is allowed to take a poison result and make it defined. It is never allowed to go the other way.</text>
+  <text x="60" y="645.2" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">That is the whole rule, and it is why LLVM's own InstCombine refuses this fold unless it can prove the</text>
+  <text x="60" y="661.5" font-family="Helvetica, Arial, sans-serif" font-size="13" fill="#1e1e1e" text-anchor="start" xml:space="preserve">arm it is about to read was never going to be poison.</text>
+</svg>
