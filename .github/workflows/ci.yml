@@ -91,14 +91,23 @@ jobs:
       # A skip would mean the install above quietly did not work, and the suite
       # would sit there green while testing none of the interesting half, so a
       # skip fails the job.
+      #
+      # One exception, and it is temporary. Alive2 is not in any distribution
+      # and building it takes hours, so the tests that need a real alive-tv skip
+      # until the `alive` bundle is published and this job can download it. That
+      # is issue #3. Any other skip still fails, and this carve out goes away
+      # with the issue.
       - name: run the toolkit tests, and insist none of them skip
         working-directory: toolkit
         run: |
           set -euo pipefail
           python3 -m unittest discover -s tests -t . -v 2>&1 | tee "$RUNNER_TEMP/result.txt"
-          if grep -q "skipped" "$RUNNER_TEMP/result.txt"; then
+          if grep "skipped" "$RUNNER_TEMP/result.txt" | grep -qv IRX_ALIVE_BIN; then
             echo "Something skipped, which means the pinned LLVM is not really there."
             exit 1
+          fi
+          if grep -q IRX_ALIVE_BIN "$RUNNER_TEMP/result.txt"; then
+            echo "Note: the Alive2 tests skipped, which is expected until #3 ships the bundle."
           fi
       # Boss fight graders, which need opt, clang and lli, so they run here
       # rather than in the build job. Same rule about skips: a grader test that
