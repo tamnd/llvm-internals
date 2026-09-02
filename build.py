@@ -55,6 +55,10 @@ OPTION = re.compile(r"(?P<key>[a-z][a-z0-9_]*)=(?P<value>\S+)")
 HEADER_KEYS = {
     "id": "str",
     "title": "str",
+    # The one sentence somebody would actually type into a search box. It is
+    # required because a lesson that cannot be phrased as a question somebody
+    # already has is a lesson looking for a reader.
+    "question": "str",
     "part": "str",
     "env": "str",
     "minutes": "int",
@@ -62,8 +66,10 @@ HEADER_KEYS = {
     "blueprints": "list",
     "bootstrap": "str",
 }
-REQUIRED_KEYS = {"id", "title", "part", "env", "minutes"}
+REQUIRED_KEYS = {"id", "title", "question", "part", "env", "minutes"}
 ENVS = {"E0", "E1", "E2"}
+
+CELL_OPTIONS = {"env", "tags", "id", "include"}
 
 
 class LessonError(Exception):
@@ -172,7 +178,9 @@ def parse_cells(lines: list[str], start: int, path: Path) -> list[Cell]:
         text = "\n".join(body).strip("\n")
         if current.kind == "markdown":
             text = strip_comment_prefix(text, current.line, path)
-        if text.strip():
+        # An include cell is empty in the source and gets its body from a file
+        # later, so it is the one cell that survives being blank here.
+        if text.strip() or "include" in current.options:
             current.source = text
             cells.append(current)
         current, body = None, []
@@ -213,11 +221,13 @@ def parse_cell_mark(rest: str, path: Path, line: int) -> Cell:
             raise LessonError(f"{path}:{line}: cell options look like key=value, got `{token}`")
         options[match.group("key")] = match.group("value")
 
-    unknown = set(options) - {"env", "tags", "id"}
+    unknown = set(options) - CELL_OPTIONS
     if unknown:
         raise LessonError(f"{path}:{line}: unknown cell option {', '.join(sorted(unknown))}")
     if "env" in options and options["env"] not in ENVS:
         raise LessonError(f"{path}:{line}: env must be one of {', '.join(sorted(ENVS))}")
+    if "include" in options and kind != "code":
+        raise LessonError(f"{path}:{line}: include only makes sense on a code cell")
     return Cell(kind=kind, source="", options=options, line=line)
 
 
@@ -237,6 +247,35 @@ def strip_comment_prefix(text: str, line: int, path: Path) -> str:
     return "\n".join(out).strip("\n")
 
 
+def resolve_includes(cells: list[Cell], path: Path) -> None:
+    """Pull a sibling Python file into the cell that asked for it.
+
+    A grader wants to be two things at once. It has to ship inside the notebook,
+    because Colab has no checkout of this repository to import from, and it has
+    to be an ordinary file so it can be linted and unit tested like anything
+    else. Writing it twice would mean the tested copy and the shipped copy drift
+    apart, and the one that drifts is the one nobody runs.
+    """
+    for cell in cells:
+        name = cell.options.get("include")
+        if name is None:
+            continue
+        if cell.source.strip():
+            raise LessonError(
+                f"{path}:{cell.line}: an include cell has no body of its own, "
+                f"put the code in {name}"
+            )
+        if "/" in name or name.startswith("."):
+            raise LessonError(f"{path}:{cell.line}: include takes a file name next to the lesson")
+        target = path.parent / name
+        if not target.is_file():
+            raise LessonError(f"{path}:{cell.line}: include `{name}` does not exist")
+        body = target.read_text(encoding="utf-8").strip("\n")
+        if "\t" in body:
+            raise LessonError(f"{target}: contains a tab, which renders differently everywhere")
+        cell.source = f"# Generated from {name}, which sits next to the lesson source.\n{body}"
+
+
 def load_lesson(path: Path) -> Lesson:
     text = path.read_text(encoding="utf-8")
     if "\t" in text:
@@ -244,6 +283,7 @@ def load_lesson(path: Path) -> Lesson:
     lines = text.split("\n")
     header, start = parse_header(lines, path)
     cells = parse_cells(lines, start, path)
+    resolve_includes(cells, path)
     stem = path.parent.name
     if header["id"] != stem:
         raise LessonError(f"{path}: header id `{header['id']}` does not match directory `{stem}`")
@@ -301,7 +341,9 @@ def bootstrap_cell(lesson: Lesson) -> Cell | None:
             f'    !pip install --quiet "irx @ git+https://github.com/{REPO}@{BRANCH}#subdirectory=toolkit"',
             "    import irx",
             "",
-            "irx.bootstrap()",
+            # Trailing semicolon: bootstrap prints what it found, and the
+            # Toolchain it returns underneath that is noise in every lesson.
+            "irx.bootstrap();",
         ]
     )
     return Cell(kind="code", source=source)
@@ -340,6 +382,7 @@ def to_notebook(lesson: Lesson) -> dict:
             "llvm_internals": {
                 "id": header["id"],
                 "title": header["title"],
+                "question": header["question"],
                 "part": header["part"],
                 "env": header["env"],
                 "minutes": header["minutes"],
@@ -426,10 +469,13 @@ def cmd_notebooks(args: argparse.Namespace) -> int:
 
 def cmd_check(_args: argparse.Namespace) -> int:
     problems = []
+    notes = []
     seen = set()
+    needs: dict[str, list[str]] = {}
     for path in lesson_paths():
         lesson = load_lesson(path)
         seen.add(lesson.id)
+        needs[lesson.id] = [str(n) for n in lesson.header.get("needs", [])]
         target = NOTEBOOKS / lesson.id / "lesson.ipynb"
         want = dump(to_notebook(lesson))
         if not target.exists():
@@ -445,9 +491,20 @@ def cmd_check(_args: argparse.Namespace) -> int:
             if stray.is_dir() and stray.name not in seen:
                 problems.append(f"{stray.relative_to(ROOT)} has no lesson source")
 
+    # A `needs` entry that points at nothing is worth saying out loud and is not
+    # worth failing over. The lessons get written out of order on purpose, so a
+    # pilot written early names three prerequisites that do not exist yet, and
+    # turning that into a red build would mean lying in the header to get green.
+    for lesson_id, wanted in sorted(needs.items()):
+        for other in wanted:
+            if other not in seen:
+                notes.append(f"{lesson_id} needs {other}, which is not written yet")
+
     for problem in problems:
         print(f"check: {problem}")
-    print(f"check: {len(seen)} lesson(s), {len(problems)} problem(s)")
+    for note in notes:
+        print(f"check: note, {note}")
+    print(f"check: {len(seen)} lesson(s), {len(problems)} problem(s), {len(notes)} note(s)")
     return 1 if problems else 0
 
 
@@ -528,6 +585,7 @@ def cmd_diagrams(_args: argparse.Namespace) -> int:
 TEMPLATE = '''# ---
 # id: {id}
 # title: {title}
+# question: TODO, the sentence somebody would type into a search box
 # part: TODO
 # env: E0
 # minutes: 30

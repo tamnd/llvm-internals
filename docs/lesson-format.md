@@ -18,6 +18,7 @@ There is a second reason, and it matters more than the first. Cells are emitted 
 # ---
 # id: t04_the_pass_tape
 # title: The pass tape
+# question: I typed -O2 and my function changed, which pass changed it?
 # part: I
 # env: E0
 # minutes: 35
@@ -34,12 +35,14 @@ There is a second reason, and it matters more than the first. Cells are emitted 
 
 # %%
 mod = irx.compile_c(SOURCE)
-tape = irx.pipeline.tape(mod, "default<O2>")
-tape.show()
+tape = irx.tape(mod, "default<O2>")
+tape
 
 # %% env=E1
 # Needs a full build tree, so it runs locally and replays from a recording in Colab.
 irx.build.rebuild(["opt"])
+
+# %% include=grade.py id=grader
 
 # %% [markdown]
 # ## What just happened
@@ -53,6 +56,7 @@ Between the two `# ---` lines, one key per line. Unknown keys are an error rathe
 |---|---|---|
 | `id` | yes | Must match the directory name |
 | `title` | yes | Sentence case, no trailing full stop |
+| `question` | yes | The sentence somebody would type into a search box |
 | `part` | yes | Roman numeral, or `0` for Part 0 |
 | `env` | yes | `E0`, `E1` or `E2`, meaning where the lesson can run |
 | `minutes` | yes | Honest estimate for a reader at the target level |
@@ -71,8 +75,13 @@ Options go after the marker as `key=value`:
 | `env=E1` | This one cell needs a full build tree. It gets tagged so CI does not try to execute it, and it plays back from a recording for readers on Colab. |
 | `tags=a,b` | Raw notebook cell tags, for anything the format does not cover yet. |
 | `id=name` | A stable name for the cell, so a grader or another lesson can refer to it. |
+| `include=grade.py` | The cell body comes from that file, which has to sit next to `lesson.py`. The cell itself must be empty. |
 
 The first cell has to be markdown. A lesson opens with a hook, not with an import.
+
+`question` is required because a lesson that cannot be phrased as a question somebody already has is a lesson looking for a reader. It is also what the site indexes, so it should read like a person typing, not like a chapter heading.
+
+`include` exists for graders. A grader has to ship inside the notebook, because Colab has no checkout of this repository to import from, and it also has to be an ordinary Python file so it can be linted and unit tested like anything else. Writing it twice would mean the tested copy and the shipped copy drift apart, and the one that drifts is the one nobody runs. The include is resolved when the lesson is loaded, so editing `grade.py` makes the notebook stale and `build.py check` says so.
 
 ## What build.py adds for you
 
@@ -92,6 +101,8 @@ python3 build.py diagrams                  regenerate docs/diagrams
 ```
 
 `check` rebuilds every notebook in memory and compares it byte for byte with what is committed. If they differ, somebody edited a generated file, and the fix is to move the change into the `.py` and rebuild.
+
+It also prints a note for any `needs` entry that names a lesson nobody has written yet. That is a note and not a failure on purpose. The lessons get written out of order, so an early pilot names three prerequisites that do not exist, and turning that into a red build would push somebody into deleting the header line to get green, which throws away the one piece of information the line was carrying.
 
 ## Byte stability
 

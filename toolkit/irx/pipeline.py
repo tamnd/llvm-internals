@@ -32,26 +32,40 @@ from .ir import Diff, Module, highlight
 from .proc import run
 
 # opt writes one of these before every dump. The trailing note is what tells a
-# pass that did nothing apart from one that did. Three shapes show up in
-# practice and all three have to be recognised, because a header that is not
-# recognised does not end the frame before it, it gets swallowed into that
-# frame's IR:
+# pass that did nothing apart from one that did. Every shape has to be
+# recognised, because a header that is not recognised does not end the frame
+# before it, it gets swallowed into that frame's IR:
 #
 #   *** IR Dump At Start ***
 #   *** IR Dump After SROAPass on f ***
 #   *** IR Dump After SROAPass on f omitted because no change ***
 #   *** IR Pass PassManager<Function> on f ignored ***
+#   *** IR Pass LoopDeletionPass invalidated ***
+#
+# The last one has no scope, because there is nothing left to name. It is what
+# opt says when a pass deletes the thing it was running on, which is a loop pass
+# deleting its loop. It is also the most interesting line in the file, and it is
+# the one that is easiest to miss.
 #
 # The pass name is `.+?` rather than `\S+` on purpose. An out of tree plugin
 # reports itself as `(anonymous namespace)::CountInstructions`, with a space in
 # it, which is exactly the case a lesson in Part IV will hit.
 HEADER = re.compile(
     r"^\*\*\* IR (?:Dump At (?P<start>Start)"
-    r"|(?:Dump After|Pass) (?P<name>.+?) on (?P<scope>.+?)"
-    r"(?P<note> omitted because no change| filtered out| ignored)?)"
+    r"|(?:Dump After|Pass) (?P<name>.+?)(?: on (?P<scope>.+?))?"
+    r"(?P<note> omitted because no change| filtered out| ignored| invalidated)?)"
     r" \*\*\*$",
     re.M,
 )
+
+# Every line opt writes that we are supposed to understand starts like this, so
+# anything matching it that HEADER does not match is a shape we have not seen.
+BANNER = re.compile(r"^\*\*\* IR .*\*\*\*$", re.M)
+
+# opt says "ignored" about most of the plumbing, and that is the signal we use
+# to leave pass managers and adaptors out of the count. It does not say it about
+# a manager that got invalidated, so those we have to recognise ourselves.
+PLUMBING = re.compile(r"PassManager<|Adaptor|RepeatedPass|WrapperPass$")
 
 # llvm-as says where it stopped understanding, and that is how we find the end
 # of a dump that has a pass's own output stuck to the back of it.
@@ -81,15 +95,25 @@ class Step:
     name: str  # "SROAPass"
     scope: str  # "f" for a function pass, "[module]" for a module pass
     changed: bool
-    ir: str = ""  # the whole module after this pass, empty when nothing changed
+    ir: str = ""  # the whole module after this pass, empty when there is no dump
+    # True when the pass deleted the thing it was running on. It changed the
+    # module and there is no dump for it, because by the time opt went to print
+    # the loop it had been printing was gone.
+    invalidated: bool = False
 
     @property
     def short(self) -> str:
         return SUFFIX.sub("", self.name) or self.name
 
+    @property
+    def where(self) -> str:
+        return self.scope or "[gone]"
+
     def __str__(self) -> str:
         did = "changed" if self.changed else "no change"
-        return f"{self.index:>4}  {self.name} on {self.scope}, {did}"
+        if self.invalidated:
+            did = "deleted what it was running on"
+        return f"{self.index:>4}  {self.name} on {self.where}, {did}"
 
 
 @dataclass(repr=False)
@@ -107,10 +131,19 @@ class Tape:
         return [s for s in self.steps if s.changed]
 
     @property
+    def shown(self) -> list[Step]:
+        """The passes that changed the module and left a dump behind.
+
+        A pass that deleted the loop it was running on changed the module and
+        has no dump, so it counts in `changed` and cannot be a frame.
+        """
+        return [s for s in self.steps if s.changed and s.ir]
+
+    @property
     def frames(self) -> list[Module]:
-        """The starting module, then one per pass that changed it."""
+        """The starting module, then one per pass that changed it and printed."""
         out = [self.source]
-        for step in self.changed:
+        for step in self.shown:
             out.append(Module(text=step.ir, name=self.source.name,
                               history=[*self.source.history, step.name]))
         return out
@@ -153,12 +186,19 @@ class Tape:
     def __str__(self) -> str:
         """The text fallback, which has to teach the same thing the widget does."""
         lines = [self.headline, ""]
-        for step, delta in zip(self.changed, self.deltas()):
+        deltas = self.deltas()
+        seen = 0
+        for step in self.changed:
             # A loop pass names the loop and the function it is in, which is
             # long enough to wreck the column, so it gets cut here and kept in
             # full in the panel.
-            scope = step.scope if len(step.scope) <= 22 else step.scope[:19] + "..."
-            lines.append(f"  {step.index:>4}  {step.short:<26} {scope:<23} {_size(delta)}")
+            scope = step.where if len(step.where) <= 22 else step.where[:19] + "..."
+            if step.invalidated:
+                size = "deleted it, no dump"
+            else:
+                size = _size(deltas[seen])
+                seen += 1
+            lines.append(f"  {step.index:>4}  {step.short:<26} {scope:<23} {size}")
         if not self.changed:
             lines.append("  Nothing in this pipeline touched the module.")
         return "\n".join(lines) + "\n"
@@ -167,8 +207,13 @@ class Tape:
         return _widget(self)
 
 
-def tape(module: Module, passes: str, *extra: str) -> Tape:
-    """Run `passes` over `module` and keep every step of it."""
+def tape(module: Module, passes: str, *extra: str, strict: bool = True) -> Tape:
+    """Run `passes` over `module` and keep every step of it.
+
+    `strict` decides what happens when opt writes a banner we do not recognise.
+    Stopping is the right default, because the alternative is a tape that looks
+    fine and has a few extra lines glued onto one of its frames.
+    """
     flags = _plugin_flags()
     result = run(
         "opt",
@@ -183,7 +228,7 @@ def tape(module: Module, passes: str, *extra: str) -> Tape:
     )
     # Only pay for the tidy up when there is a plugin loaded that could have
     # printed something. A stock pipeline writes nothing but dumps.
-    return _parse(result.stderr, passes, module, tidy=bool(flags))
+    return _parse(result.stderr, passes, module, tidy=bool(flags), strict=strict)
 
 
 def _plugin_flags() -> list[str]:
@@ -194,38 +239,71 @@ def _plugin_flags() -> list[str]:
     return plugin.load_flags()
 
 
-def _parse(stderr: str, passes: str, source: Module, tidy: bool = False) -> Tape:
+def _parse(
+    stderr: str, passes: str, source: Module, tidy: bool = False, strict: bool = True
+) -> Tape:
     """Split opt's output on opt's own headers. The bodies are never inspected."""
     marks = list(HEADER.finditer(stderr))
+    if strict:
+        _check_every_banner(stderr, marks)
     steps: list[Step] = []
     index = 0
     for i, mark in enumerate(marks):
         if mark.group("start"):
             continue
+        note = mark.group("note")
         # "ignored" is what opt says about the plumbing: pass managers, the
         # adaptors that run a function pass over a module, the verifier, the
         # print at the end. They have to be matched, or they end up inside the
         # frame before them, but counting them as passes would inflate the one
         # number this whole thing exists to report.
-        if mark.group("note") == " ignored":
+        #
+        # A pass manager can also be reported as invalidated rather than
+        # ignored, and opt does not label that one as plumbing, so we have to.
+        if note == " ignored":
+            continue
+        if note == " invalidated" and PLUMBING.search(mark.group("name")):
             continue
         end = marks[i + 1].start() if i + 1 < len(marks) else len(stderr)
-        changed = mark.group("note") is None
+        changed = note is None or note == " invalidated"
+        dumped = note is None
         body = stderr[mark.end() : end].strip("\n")
-        ir = body + "\n" if changed else ""
-        if changed and tidy:
+        ir = body + "\n" if dumped else ""
+        if dumped and tidy:
             ir = _trim(ir)
         index += 1
         steps.append(
             Step(
                 index=index,
                 name=mark.group("name"),
-                scope=mark.group("scope"),
+                scope=mark.group("scope") or "",
                 changed=changed,
                 ir=ir,
+                invalidated=note == " invalidated",
             )
         )
     return Tape(pipeline=passes, source=source, steps=steps)
+
+
+def _check_every_banner(stderr: str, marks: list[re.Match]) -> None:
+    """Stop on a banner shape we have not seen, rather than swallowing it.
+
+    This is here because it has already happened twice. An unrecognised banner
+    does not announce itself, it ends up inside the previous frame's IR, and the
+    only visible symptom is that a few line counts are slightly wrong. Failing
+    here costs somebody a bug report. Not failing here costs a reader their
+    trust in every number the tape prints.
+    """
+    known = {m.start() for m in marks}
+    for banner in BANNER.finditer(stderr):
+        if banner.start() not in known:
+            raise ValueError(
+                f"opt wrote a banner irx does not know how to read:\n\n  {banner.group(0)}\n\n"
+                "That usually means this LLVM prints something a previous one did not. "
+                "Please open an issue with that line. To carry on for now and accept that "
+                "one frame will have those words stuck to the end of it, "
+                "pass strict=False to tape()."
+            )
 
 
 def _trim(body: str) -> str:
@@ -316,39 +394,72 @@ def _rules(ident: str, count: int) -> str:
     return "".join(css)
 
 
+def _cards(t: Tape) -> list[tuple[Step | None, int | None]]:
+    """One entry per chip: the step it stands for, and which frame it shows.
+
+    Every pass that changed the module gets a chip, but a pass that deleted what
+    it was running on has no frame to show, so its slot is None and its panel
+    says so. Walking the two lists together here is the only place that has to
+    know they are different lengths.
+    """
+    out: list[tuple[Step | None, int | None]] = [(None, 0)]
+    slot = 0
+    for step in t.changed:
+        if step.invalidated:
+            out.append((step, None))
+        else:
+            slot += 1
+            out.append((step, slot))
+    return out
+
+
 def _widget(t: Tape) -> str:
     ident = _ident(t)
     frames, diffs, deltas = t.frames, t.diffs(), t.deltas()
-    chips = ["start"]
-    for step, delta in zip(t.changed, deltas):
-        chips.append(f"{step.short} {delta:+d}" if delta else step.short)
+    cards = _cards(t)
 
     inputs, strip, panels = [], [], []
-    for k, chip in enumerate(chips, start=1):
+    for k, (step, slot) in enumerate(cards, start=1):
+        if step is None:
+            chip = "start"
+        elif slot is None:
+            chip = f"{step.short} gone"
+        else:
+            delta = deltas[slot - 1]
+            chip = f"{step.short} {delta:+d}" if delta else step.short
         box = f"{ident}-{k}"
         state = " checked" if k == 1 else ""
         inputs.append(f'<input type="radio" name="{ident}" id="{box}"{state}>')
         strip.append(f'<label for="{box}">{html.escape(chip)}</label>')
         hide = "" if k == 1 else ' style="display:none"'
-        panels.append(f'<div class="fr"{hide}>{_panel(t, k, frames, diffs, deltas)}</div>')
+        panels.append(f'<div class="fr"{hide}>{_panel(t, step, slot, frames, diffs, deltas)}</div>')
 
     return (
-        f'<div id="{ident}"><style>{_rules(ident, len(chips))}</style>'
+        f'<div id="{ident}"><style>{_rules(ident, len(cards))}</style>'
         f'<div class="hd">{html.escape(t.headline)}</div>'
         f'{"".join(inputs)}<div class="st">{"".join(strip)}</div>'
         f'<div class="pn">{"".join(panels)}</div></div>'
     )
 
 
-def _panel(t: Tape, k: int, frames, diffs, deltas) -> str:
-    if k == 1:
+def _panel(t: Tape, step: Step | None, slot: int | None, frames, diffs, deltas) -> str:
+    if step is None:
         caption = f"before anything ran, {len(frames[0].text.splitlines())} lines"
         return (
             f'<p class="cap">{html.escape(caption)}</p>'
             f'<pre class="ir">{highlight(frames[0].text)}</pre>'
         )
-    step, delta, diff = t.changed[k - 2], deltas[k - 2], diffs[k - 2]
-    caption = f"pass {step.index} of {len(t.steps)}, {step.name} on {step.scope}, {_size(delta)}"
+    if slot is None:
+        caption = f"pass {step.index} of {len(t.steps)}, {step.name}, nothing to show"
+        return (
+            f'<p class="cap">{html.escape(caption)}</p>'
+            '<p class="cap">This pass deleted the thing it was running on, so there is no '
+            "dump for it. opt prints the IR after a pass by asking the loop or the function "
+            "it just ran on to print itself, and by then that loop was gone. The change shows "
+            "up in the next frame instead.</p>"
+        )
+    delta, diff = deltas[slot - 1], diffs[slot - 1]
+    caption = f"pass {step.index} of {len(t.steps)}, {step.name} on {step.where}, {_size(delta)}"
     rows = []
     for line in diff.unified().split("\n"):
         if line.startswith(("---", "+++")):
@@ -362,7 +473,7 @@ def _panel(t: Tape, k: int, frames, diffs, deltas) -> str:
         else:
             style = ""
         rows.append(f'<div style="{style}">{highlight(line) or "&nbsp;"}</div>')
-    whole = frames[k - 1].text
+    whole = frames[slot].text
     if len(whole.splitlines()) <= FULL_MODULE_LIMIT:
         details = (
             "<details><summary>the whole module after this pass</summary>"
@@ -372,7 +483,7 @@ def _panel(t: Tape, k: int, frames, diffs, deltas) -> str:
         details = (
             "<details><summary>the whole module after this pass</summary>"
             f'<p class="cap">{len(whole.splitlines())} lines, too much to carry in every '
-            f"frame. `tape.frames[{k - 1}]` has it.</p></details>"
+            f"frame. `tape.frames[{slot}]` has it.</p></details>"
         )
     return (
         f'<p class="cap">{html.escape(caption)}</p>'

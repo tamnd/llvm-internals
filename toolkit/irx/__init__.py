@@ -26,11 +26,13 @@ from . import env as _env
 from . import magic as _magic
 from . import pipeline
 from . import plugin
+from . import predict
 from .env import Env, cpu_count, describe, detect
 from .ir import Diff, Module, has_pass, highlight, passes
 from .magic import load_ipython_extension
 from .pipeline import Step, Tape, tape
 from .plugin import Plugin
+from .predict import Gate, gate
 from .proc import Result, ToolError, run, version
 from .toolchain import Toolchain, ToolchainError, current, path_to
 from .toolchain import bootstrap as _bootstrap
@@ -40,6 +42,7 @@ __version__ = "0.1.0"
 __all__ = [
     "Diff",
     "Env",
+    "Gate",
     "Module",
     "Plugin",
     "Result",
@@ -54,6 +57,7 @@ __all__ = [
     "current",
     "describe",
     "detect",
+    "gate",
     "has_pass",
     "highlight",
     "load_ipython_extension",
@@ -61,6 +65,7 @@ __all__ = [
     "path_to",
     "pipeline",
     "plugin",
+    "predict",
     "run",
     "tape",
     "version",

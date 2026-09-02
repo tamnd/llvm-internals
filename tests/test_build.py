@@ -6,6 +6,8 @@ the lesson source produces, and if that stops being true nobody notices until
 somebody has been editing generated files for a month.
 """
 
+import contextlib
+import io
 import json
 import sys
 import tempfile
@@ -19,6 +21,7 @@ import build  # noqa: E402
 LESSON = """# ---
 # id: t04_the_pass_tape
 # title: The pass tape
+# question: I typed -O2 and my function changed, which pass changed it?
 # part: I
 # env: E0
 # minutes: 35
@@ -116,6 +119,67 @@ class TestParsing(Harness):
         with self.assertRaisesRegex(build.LessonError, "contains a tab"):
             build.load_lesson(path)
 
+    def test_a_lesson_has_to_answer_a_question_somebody_has(self) -> None:
+        path = self.write("t04_the_pass_tape", LESSON.replace(LESSON.split("\n")[3] + "\n", ""))
+        with self.assertRaisesRegex(build.LessonError, "missing question"):
+            build.load_lesson(path)
+
+
+class TestInclude(Harness):
+    """A grader has to ship inside the notebook and stay a testable file."""
+
+    WITH_INCLUDE = LESSON.replace('# %%\nprint("hello")', "# %% include=grade.py id=grader")
+
+    def write_pair(self, grader: str = "def grade(x):\n    return x == 1\n") -> Path:
+        path = self.write("t04_the_pass_tape", self.WITH_INCLUDE)
+        (path.parent / "grade.py").write_text(grader, encoding="utf-8")
+        return path
+
+    def test_the_file_lands_in_the_cell(self) -> None:
+        lesson = build.load_lesson(self.write_pair())
+        self.assertIn("def grade(x):", lesson.cells[1].source)
+
+    def test_the_cell_says_where_it_came_from(self) -> None:
+        lesson = build.load_lesson(self.write_pair())
+        self.assertTrue(lesson.cells[1].source.startswith("# Generated from grade.py"))
+
+    def test_editing_the_included_file_makes_the_notebook_stale(self) -> None:
+        # This is the whole reason includes are resolved at load time. If the
+        # notebook did not go stale, the shipped grader and the tested grader
+        # would drift and only the tested one would ever be run.
+        self.write_pair()
+        build.cmd_notebooks(build.argparse.Namespace(only=None))
+        self.assertEqual(build.cmd_check(None), 0)
+        grader = self.lessons / "t04_the_pass_tape" / "grade.py"
+        grader.write_text("def grade(x):\n    return x == 2\n", encoding="utf-8")
+        self.assertEqual(build.cmd_check(None), 1)
+
+    def test_a_missing_file_is_named(self) -> None:
+        path = self.write("t04_the_pass_tape", self.WITH_INCLUDE)
+        with self.assertRaisesRegex(build.LessonError, "include `grade.py` does not exist"):
+            build.load_lesson(path)
+
+    def test_an_include_cell_cannot_also_have_a_body(self) -> None:
+        source = self.WITH_INCLUDE.replace(
+            "# %% include=grade.py id=grader", "# %% include=grade.py\nx = 1"
+        )
+        path = self.write("t04_the_pass_tape", source)
+        (path.parent / "grade.py").write_text("y = 2\n", encoding="utf-8")
+        with self.assertRaisesRegex(build.LessonError, "has no body of its own"):
+            build.load_lesson(path)
+
+    def test_it_cannot_reach_outside_the_lesson_directory(self) -> None:
+        source = self.WITH_INCLUDE.replace("include=grade.py", "include=../../secrets.py")
+        path = self.write("t04_the_pass_tape", source)
+        with self.assertRaisesRegex(build.LessonError, "a file name next to the lesson"):
+            build.load_lesson(path)
+
+    def test_markdown_cannot_include(self) -> None:
+        source = self.WITH_INCLUDE.replace("# %% include=", "# %% [markdown] include=")
+        path = self.write("t04_the_pass_tape", source)
+        with self.assertRaisesRegex(build.LessonError, "only makes sense on a code cell"):
+            build.load_lesson(path)
+
 
 class TestNotebook(Harness):
     def notebook(self) -> dict:
@@ -196,6 +260,19 @@ class TestByteStability(Harness):
         orphan.mkdir(parents=True)
         (orphan / "lesson.ipynb").write_text("{}", encoding="utf-8")
         self.assertEqual(build.cmd_check(None), 1)
+
+    def test_a_prerequisite_that_is_not_written_yet_is_a_note_not_a_failure(self) -> None:
+        # Lessons get written out of order, so an early pilot names prerequisites
+        # that do not exist. Failing the build over that would push somebody into
+        # deleting the header line to get green, which loses the information.
+        self.write("t04_the_pass_tape", LESSON)
+        build.cmd_notebooks(build.argparse.Namespace(only=None))
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = build.cmd_check(None)
+        self.assertEqual(code, 0)
+        self.assertIn("needs t01_hello, which is not written yet", out.getvalue())
+        self.assertIn("2 note(s)", out.getvalue())
 
     def test_notebook_is_valid_json_and_declares_nbformat_45(self) -> None:
         self.write("t04_the_pass_tape", LESSON)

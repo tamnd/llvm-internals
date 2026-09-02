@@ -100,6 +100,17 @@ jobs:
             echo "Something skipped, which means the pinned LLVM is not really there."
             exit 1
           fi
+      # Boss fight graders, which need opt, clang and lli, so they run here
+      # rather than in the build job. Same rule about skips: a grader test that
+      # skipped looks exactly like one that passed.
+      - name: every boss fight grader, against answers that work and answers that do not
+        run: |
+          set -euo pipefail
+          python3 -m unittest tests.test_graders -v 2>&1 | tee "$RUNNER_TEMP/graders.txt"
+          if grep -q "skipped" "$RUNNER_TEMP/graders.txt"; then
+            echo "The grader tests skipped, so no grader was actually checked."
+            exit 1
+          fi
 
   # Workflow files get the same treatment as everything else here. actionlint
   # catches the shell and expression mistakes, zizmor catches the security ones,
@@ -149,8 +160,6 @@ jobs:
   #   alive           every pass blueprint's refinement obligation, over the
   #                   corpus, which is the job that makes the central claim real
   #   blueprints      bpc regenerates and the generated sections match
-  #   graders         every boss fight grader against its known good and known
-  #                   bad artifacts
   #   toolchain       builds the five LLVM configurations from the pin and
   #                   publishes sizes and digests
   #   colab-image     nightly, runs every notebook from its badge URL in a
