@@ -6,7 +6,7 @@ Every factual claim every lesson makes, with the evidence for it. Written agains
 
 `observed` means somebody ran it, on two platforms. `cited` means it is in the LLVM source or its documentation at the pinned tag, at the line given. `inferred` means neither, and a lesson is allowed at most three.
 
-58 claims: 38 observed, 19 cited, 1 inferred.
+70 claims: 43 observed, 26 cited, 1 inferred.
 
 ## t01_one_line_of_c
 
@@ -72,6 +72,23 @@ Every factual claim every lesson makes, with the evidence for it. Written agains
 | IndVarSimplify makes gauss five lines longer by writing the sum as arithmetic on n, using i33 values so the multiply cannot overflow before the shift. | observed | cell first_tape, the IndVarSimplify frame<br>measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.1, delta plus five on both |
 | The growth is what makes the deletion legal, because a loop is only deletable once nothing outside it needs the value it was computing. | inferred | the order of the two passes in cell blame_gvn<br>llvm/lib/Transforms/Scalar/LoopDeletion.cpp:496-513@llvmorg-23.1.0 tests isLoopDead before deleting |
 | The position of a pass in the pipeline depends on the target, so the same pipeline over the same function gives 119 passes on macOS arm64 and 118 on Linux x86_64, and every claim above is written to survive that. | observed | docs/diagrams/o2-passes.json records the macOS run, the Linux run was done by hand<br>measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.1 |
+
+## t05_the_pipeline_string
+
+| Claim | Confidence | Evidence |
+|---|---|---|
+| sroa,indvars,loop-deletion leaves sum_to with the entry block and for.end and no loop, while sroa,loop-deletion,indvars leaves all five blocks and the loop intact. Neither is an error. | observed | cell same_names_new_order<br>measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, 9 instructions in 2 blocks against 12 in 5 on both |
+| loop-deletion eliminates loops with a computable trip count that have no side effects and do not contribute to the return value, so the loop in sum_to is not dead until indvars has rewritten what comes after it. Running loop-deletion first therefore wastes it, and a pipeline entry runs once with no second chance. | cited | cell same_names_new_order<br>llvm/lib/Transforms/Scalar/LoopDeletion.cpp:9-12@llvmorg-23.1.0, "eliminating loops with non-infinite computable trip counts that have no side effects or volatile instructions, and do not contribute to the computation of the function's return value" |
+| opt reads the first name in a -passes list, decides which level that pass belongs to, and wraps the whole list at that level, so loop-deletion,indvars,sroa is parsed as a loop pipeline and fails with "unknown loop pass 'sroa'". | cited | cells the_order_that_will_not_parse and where_a_pass_lives<br>llvm/lib/Passes/PassBuilder.cpp:2715-2719@llvmorg-23.1.0, "If the first name isn't at the module layer, wrap the pipeline up automatically", and llvm/docs/NewPassManager.md:449-457@llvmorg-23.1.0 |
+| The message is produced by the pipeline parser rather than by any pass, and there is one per level, so the wording tells you which level opt had settled on. | cited | cell where_a_pass_lives<br>llvm/lib/Passes/PassBuilder.cpp:2553@llvmorg-23.1.0 for the loop wording and llvm/lib/Passes/PassBuilder.cpp:2486@llvmorg-23.1.0 for the function wording |
+| The levels nest as module, then optionally call graph component, then function, then loop. A list may go from a wider level to a narrower one and never back, which is why globaldce,instcombine runs and instcombine,globaldce does not. | cited | cell where_a_pass_lives<br>llvm/docs/NewPassManager.md:445@llvmorg-23.1.0, "The nesting is: module (-> cgscc) -> function -> loop, where the CGSCC nesting is optional" |
+| A narrower pass named in a wider list is wrapped in an adaptor, and each name gets its own, so globaldce,instcombine,loop-deletion becomes globaldce, then function(instcombine), then a separate function(loop(loop-deletion)). | cited | cell print_the_pipeline<br>llvm/docs/NewPassManager.md:459-465@llvmorg-23.1.0 and llvm/lib/Passes/PassBuilder.cpp:2173@llvmorg-23.1.0 |
+| Two adaptors mean two walks over the functions of the module, and one pass manager holding both passes means one walk that runs both on each function. Upstream recommends the grouped form for cache locality and says it can change the quality of the optimisation. | cited | cell print_the_pipeline<br>llvm/docs/NewPassManager.md:112-140@llvmorg-23.1.0 |
+| The pipeline opt builds from -passes=sroa is function(sroa<modify-cfg>),verify, so the printed form shows the adaptor, the pass parameters filled in with their defaults, and a verify run that opt appends. | observed | cell print_the_pipeline<br>measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, byte identical on both |
+| default<O2> prints as a single pipeline text of about 4800 characters. The exact length and entry count are target dependent, 4791 characters and 120 entries on macOS arm64 and 4770 and 119 on Linux x86_64, which is why the lesson prints them rather than stating them. | observed | cell the_o2_string<br>measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0 |
+| Feeding the printed default<O2> text back to -passes= produces byte identical IR to running default<O2> by name, and opt checks this itself by building a pipeline from the text before printing it. | cited | cell feed_it_back<br>llvm/tools/opt/NewPMDriver.cpp:171-176@llvmorg-23.1.0, the -disable-pipeline-verification flag whose description is that it "Disables verifying that the textual pipeline generated by -print-pipeline-passes can be used to create a pipeline" |
+| simplifycfg appears eight times in default<O2> with five distinct sets of options. Seven of the eight are given keep-loops, three are given switch-to-arithmetic, and exactly one, the seventh, is given switch-to-lookup. | observed | cell eight_simplifycfgs<br>measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, the same eight instances in the same positions on both |
+| On a six case switch, simplifycfg<no-switch-to-lookup> leaves the switch and its arms, and simplifycfg<switch-to-lookup> produces a private constant array named @switch.table.pick and a function that is a range check and a load. | observed | cell one_option_one_table<br>measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, 23 instructions and no global against 11 and one on both |
 
 ## x03_your_first_fold
 
