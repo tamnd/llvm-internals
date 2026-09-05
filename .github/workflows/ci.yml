@@ -29,6 +29,11 @@ jobs:
         with:
           python-version: "3.13"
       - run: python tools/prosecheck.py .
+      # Same shape of check and the same reason for living next door to it: a
+      # claim that names a renamed cell, or carries a tag from before the last
+      # pin bump, is wrong in a way nothing else in this workflow would notice.
+      # The half that needs an llvm-project checkout is not here yet, see below.
+      - run: python tools/refcheck.py
 
   # A committed notebook has to be exactly what its lesson source produces.
   # Without this job the whole "notebooks are build output" rule is a convention
@@ -152,8 +157,10 @@ jobs:
   # The jobs below do not exist yet and are listed here rather than in a
   # planning document so that whoever adds one can see where it goes.
   #
-  #   refcheck        every path:line@llvmorg-23.1.0 citation resolves and the
-  #                   surrounding lines still hash to what they hashed to
+  #   refcheck-src    tools/refcheck.py --llvm-src against a checkout of the
+  #                   pinned llvm-project, so every path:line@llvmorg-23.1.0
+  #                   citation resolves and the surrounding lines still hash to
+  #                   what they hashed to. The rest of refcheck runs in `prose`
   #   notebooks       every notebook runs top to bottom from a cold kernel
   #   alive           every pass blueprint's refinement obligation, over the
   #                   corpus, which is the job that makes the central claim real
