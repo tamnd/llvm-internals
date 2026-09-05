@@ -1,0 +1,78 @@
+# Every factual claim in this lesson, with the evidence for it.
+# confidence is one of: observed, cited, inferred. At most three may be inferred.
+#
+# Everything marked observed was checked on two platforms, macOS arm64 with
+# Homebrew LLVM 23.1.0 and Linux x86_64 running the min bundle's own clang and
+# opt built from llvmorg-23.1.0. Every count below is the same on both.
+claims:
+  - id: two-names-run-five-passes
+    claim: opt -passes=licm,loop-rotate runs LoopSimplifyPass, LCSSAPass, LICMPass, LoopRotatePass and VerifierPass, so three of the five are passes nobody typed.
+    evidence: cell two_passes_four_ran
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, the same five names in the same order on both
+    confidence: observed
+
+  - id: the-adaptor-canonicalises
+    claim: The two extra loop passes come from the loop adaptor's constructor, which adds LoopSimplifyPass and LCSSAPass to a canonicalisation pipeline it runs before the loop passes it was given.
+    evidence: cell two_passes_four_ran
+    citation: llvm/include/llvm/Transforms/Scalar/LoopPassManager.h:404-410@llvmorg-23.1.0, "LoopCanonicalizationFPM.addPass(LoopSimplifyPass()); LoopCanonicalizationFPM.addPass(LCSSAPass());" in the constructor
+    confidence: cited
+
+  - id: the-two-views-disagree
+    claim: -print-pipeline-passes and -debug-pass-manager describe the same request differently and both are right. The printed pipeline for licm,loop-rotate names neither canonicalisation pass, because they are inside the adaptor rather than in the pipeline, and it names the loop-mssa adaptor rather than loop.
+    evidence: cells two_passes_four_ran and the_printed_pipeline_does_not_know
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, byte identical printed pipeline on both
+    confidence: observed
+
+  - id: analyses-are-on-demand-and-cached
+    claim: An analysis is computed because a pass asked the analysis manager for it. The manager returns a cached result if it has one that is still valid, and otherwise runs the analysis, caches it and returns that.
+    evidence: cells an_analysis_asks_for_an_analysis and asked_twice_computed_once
+    citation: llvm/docs/NewPassManager.md:189-195@llvmorg-23.1.0, "Querying for an analysis will cause the manager to check if it has already computed the result for the requested IR"
+    confidence: cited
+
+  - id: an-analysis-asks-for-an-analysis
+    claim: require<loops> causes four analyses to run, of which LoopAnalysis and DominatorTreeAnalysis are the substance, and LoopAnalysis is printed first because the print happens before an analysis starts rather than after it finishes. So the log is nesting rather than sequence.
+    evidence: cell an_analysis_asks_for_an_analysis
+    citation: llvm/lib/Passes/StandardInstrumentations.cpp:1157-1160@llvmorg-23.1.0, the "Running analysis: " print is registered as a before-analysis callback, and the same four names on both platforms
+    confidence: cited
+
+  - id: computed-once-for-three-users
+    claim: In require<domtree>,require<loops>,require<domtree> the dominator tree is computed once, for two passes that demand it directly and a LoopAnalysis that needs one as well.
+    evidence: cell asked_twice_computed_once
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, one "Running analysis: DominatorTreeAnalysis" line on both
+    confidence: observed
+
+  - id: neither-the-pass-nor-the-change-predicts-it
+    claim: Over sum_to and twice, simplifycfg changes sum_to and the dominator tree is dropped, changes nothing in twice and it is kept, while instcombine changes both functions and the tree is kept both times. So invalidation follows neither the identity of the pass nor the fact that the IR changed.
+    evidence: cell same_pass_two_answers
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, the same four rows on both
+    confidence: observed
+
+  - id: invalidation-is-a-return-value
+    claim: What survives a pass is decided by the PreservedAnalyses the pass returns. The pass manager hands that set to the analysis manager, which drops everything the set does not cover. Nothing compares the IR before and after.
+    evidence: cells same_pass_two_answers and the_flag_that_proves_it
+    citation: llvm/docs/NewPassManager.md:288-306@llvmorg-23.1.0, "The pass manager will call the analysis manager's invalidate() method with the pass's returned PreservedAnalyses"
+    confidence: cited
+
+  - id: simplifycfg-returns-all-when-idle
+    claim: SimplifyCFGPass::run returns PreservedAnalyses::all() when simplifyFunctionCFG reports no change, and otherwise returns a PreservedAnalyses that contains the dominator tree only if RequireAndPreserveDomTree is set.
+    evidence: cell same_pass_two_answers
+    citation: llvm/lib/Transforms/Scalar/SimplifyCFGPass.cpp:374-391@llvmorg-23.1.0
+    confidence: cited
+
+  - id: instcombine-preserves-a-set
+    claim: InstCombinePass::run also returns PreservedAnalyses::all() when it changed nothing, and when it did change something it preserves the CFGAnalyses set, which covers every analysis that depends on nothing but control flow and so keeps the dominator tree alive. EarlyCSE ends the same way.
+    evidence: cell same_pass_two_answers
+    citation: llvm/lib/Transforms/InstCombine/InstructionCombining.cpp:6301-6313@llvmorg-23.1.0 and llvm/lib/Transforms/Scalar/EarlyCSE.cpp:1820-1826@llvmorg-23.1.0, both ending in PA.preserveSet<CFGAnalyses>()
+    confidence: cited
+
+  - id: one-flag-changes-the-answer-and-not-the-output
+    claim: Running simplifycfg on sum_to with -simplifycfg-require-and-preserve-domtree produces the same IR as running it without, and the dominator tree is no longer thrown away.
+    evidence: cell the_flag_that_proves_it
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, identical function bodies and no invalidation line on both
+    confidence: observed
+
+  - id: the-flag-is-unfinished-work
+    claim: RequireAndPreserveDomTree is a hidden command line flag that is off by default, described in its own declaration as a temporary development switch for gradually uplifting SimplifyCFG into preserving the dominator tree.
+    evidence: cell the_flag_that_proves_it
+    citation: llvm/lib/Transforms/Utils/SimplifyCFG.cpp:101-107@llvmorg-23.1.0, "Temporary development switch used to gradually uplift SimplifyCFG into preserving DomTree,"
+    confidence: cited
