@@ -1,0 +1,82 @@
+# Every factual claim in this lesson, with the evidence for it.
+# confidence is one of: observed, cited, inferred. At most three may be inferred.
+#
+# Everything marked observed was checked on two platforms, macOS arm64 with
+# Homebrew LLVM 23.1.0 and Linux x86_64 running the min bundle's own clang and
+# opt built from llvmorg-23.1.0. The only difference between the two is the word
+# dso_local on definitions, which is why the widening cell matches on
+# "i32 @deref" rather than on "define i32". Matching on "define i32" worked on
+# macOS and silently did nothing on Linux, which left a return type that
+# disagreed with the value returned.
+claims:
+  - id: module-is-five-kinds-of-line
+    claim: A module's top level is target description lines, globals, functions with bodies, functions without, then attribute groups and metadata. @ starts a global, % something local to a function, ! metadata.
+    evidence: cell whole_module
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, same set of kinds on both
+    confidence: observed
+
+  - id: one-terminator-per-block
+    claim: A basic block is a label, then instructions, then exactly one terminator, which is the last instruction. A block with no terminator or with a terminator in the middle is not accepted.
+    evidence: cell inside_a_function
+    citation: llvm/docs/LangRef.md:1038-1043 and 9968-9971@llvmorg-23.1.0
+    confidence: cited
+
+  - id: pointers-have-no-pointee
+    claim: The pointer type is ptr and carries no pointee type. Four C functions taking int *, char *, a pointer to a 128 byte struct and a function pointer all compile to the identical LLVM signature ptr (ptr).
+    evidence: cell four_pointers
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, four identical signatures on both, and llvm/docs/LangRef.md:4713-4718@llvmorg-23.1.0, whose whole Pointer Type section describes address spaces and representation width and never mentions a pointee
+    confidence: observed
+
+  - id: old-syntax-parses-and-is-discarded
+    claim: The old typed pointer syntax i32* still parses. The parser translates it to ptr and the i32 is gone from what LLVM stores, so material written before the change does not visibly break.
+    evidence: cell old_syntax
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, both print back ptr
+    confidence: observed
+
+  - id: typed-pointers-cost-bitcasts
+    claim: Typed pointers forced the front end to emit no-op bitcasts purely to satisfy the type system, cost memory and compile time, and made passes miss optimisations when they failed to look through one. Removing the pointee type removed that whole category.
+    evidence: cell old_syntax, prose
+    citation: llvm/docs/OpaquePointers.rst:78-90@llvmorg-23.1.0
+    confidence: cited
+
+  - id: nothing-cross-checks-access-width
+    claim: Changing a load through an int * argument from i32 to i64, and changing nothing else but the return type, produces IR the verifier accepts, because no record of the C pointee type survives in the file.
+    evidence: cell nothing_checks_it
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, verifier exits 0 on both
+    confidence: observed
+
+  - id: gep-type-is-a-stride
+    claim: The type on a getelementptr supplies a stride rather than describing memory. The same C array index is emitted over i32 at -O0 and over [4 x i8] at -O1, both striding four bytes per index to the same address.
+    evidence: cell gep_is_arithmetic
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, i32 at -O0 and [4 x i8] at -O1 on both
+    confidence: observed
+
+  - id: numbers-come-from-the-printer
+    claim: Unnamed register numbers are not stored. SlotTracker::processFunction walks one counter over unnamed arguments, then for each block the block itself if unnamed, then each unnamed instruction whose type is not void, and the printer uses the result.
+    evidence: cells who_names_the_registers and void_takes_nothing
+    citation: llvm/lib/IR/AsmWriter.cpp:1143-1166@llvmorg-23.1.0, CreateFunctionSlot at 1408-1417
+    confidence: cited
+
+  - id: an-unnamed-entry-block-takes-a-slot
+    claim: Adding the label entry: to the entry block changes every number in the function, because an unnamed block consumes a slot and a named one does not. The same one line function prints %1 without the label and %0 with it.
+    evidence: cell who_names_the_registers
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, %1 and %0 on both, and stated in llvm/docs/LangRef.md:1043-1048@llvmorg-23.1.0 with the same worked example
+    confidence: observed
+
+  - id: void-instructions-take-no-slot
+    claim: store and ret produce no value and take no slot. A seven instruction function written with the numbers 0, 2 and 4 prints back as 0, 1 and 2.
+    evidence: cell void_takes_nothing
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, identical output on both
+    confidence: observed
+
+  - id: parser-accepts-greater-not-smaller
+    claim: The parser accepts any unnamed value number at least as large as the one it expects and renumbers on output, so %5 and %99 and %4 are all accepted, and a number that is too small is an error reading "instruction expected to be numbered '%N' or greater".
+    evidence: cells who_names_the_registers, void_takes_nothing and the_error
+    citation: llvm/lib/AsmParser/LLParser.cpp:3595-3601, LLParser::checkValueID@llvmorg-23.1.0, message reproduced on both platforms
+    confidence: cited
+
+  - id: two-unnamed-args-leave-slot-three
+    claim: In a function with two unnamed arguments and an unlabelled entry block, the arguments take %0 and %1, the block takes %2, and the first instruction must be %3, which is why writing %2 there is rejected.
+    evidence: cell the_error
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, same message and same number on both
+    confidence: observed
