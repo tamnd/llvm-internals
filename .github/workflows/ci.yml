@@ -84,8 +84,11 @@ jobs:
           # llvm-N is tools only. The headers a pass plugin compiles against are
           # in llvm-N-dev, and llvm-config points at them either way, so leaving
           # it out gets you a confident -I at a directory that is not there.
+          # zstd is how the min bundle is packed, and tests/test_unpack.py
+          # skips itself without it. A skip fails this job by design, but it
+          # would fail as a mystery, so ask for the package by name.
           sudo apt-get install -y --no-install-recommends \
-            "clang-$major" "llvm-$major" "llvm-$major-dev"
+            "clang-$major" "llvm-$major" "llvm-$major-dev" zstd
       - name: the pin and the toolkit copy of it agree
         run: python3 -m unittest tests.test_pin -v
       # A skip would mean the install above quietly did not work, and the suite
