@@ -1,0 +1,56 @@
+# Every factual claim in this lesson, with the evidence for it.
+# confidence is one of: observed, cited, inferred. At most three may be inferred.
+#
+# Everything marked observed was checked on two platforms, macOS arm64 with
+# Homebrew LLVM 23.1.0 and Linux x86_64 running the min bundle's own clang and
+# opt built from llvmorg-23.1.0. The IR differs between them by the word
+# dso_local and nothing else that this lesson mentions, which is why the cells
+# compare counts and attribute names rather than matching the define line.
+claims:
+  - id: front-end-emits-eight
+    claim: clang -O0 turns a one line add into eight instructions, two allocas, two stores, two loads, an add and a ret, and clang -O2 turns the same C into two.
+    evidence: cell source
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, eight and two on both
+    confidence: observed
+
+  - id: o0-carries-optnone
+    claim: clang marks every function optnone at -O0 and does not at -O2.
+    evidence: cell find_the_note
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0
+    confidence: observed
+
+  - id: the-pipeline-does-nothing
+    claim: Running the whole default<O2> pipeline over clang's own -O0 output leaves the function byte for byte unchanged.
+    evidence: cell opt_does_nothing
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, eight instructions in and eight out on both
+    confidence: observed
+
+  - id: optnone-is-central-not-per-pass
+    claim: optnone is not checked by each pass. OptNoneInstrumentation::shouldRun is consulted by the pass manager before any pass runs on a function, so a pass that has never heard of optnone is skipped anyway.
+    evidence: cell watch_the_skips
+    citation: llvm/lib/Passes/StandardInstrumentations.cpp:1039-1053@llvmorg-23.1.0
+    confidence: cited
+
+  - id: seventy-six-passes-skipped
+    claim: default<O2> over an optnone function skips 76 passes, and SROAPass, the pass that would have removed the stack slots, is one of them.
+    evidence: cell watch_the_skips
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, 76 on both, SROAPass third in the list on both
+    confidence: observed
+
+  - id: verifier-requires-noinline
+    claim: The IR verifier rejects a module carrying optnone without noinline, with the message "Attribute 'optnone' requires 'noinline'!".
+    evidence: cell watch_the_skips, and opt -passes=verify over a hand written define with optnone alone
+    citation: llvm/lib/IR/Verifier.cpp:2363-2368@llvmorg-23.1.0, message reproduced on both platforms
+    confidence: cited
+
+  - id: removing-the-note-frees-the-pipeline
+    claim: Deleting optnone and noinline from the attribute group, changing nothing else, makes the same default<O2> pipeline collapse the eight instructions to the same two that clang -O2 produced.
+    evidence: cell strip_the_note
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0
+    confidence: observed
+
+  - id: compile-c-disables-it
+    claim: irx.compile_c passes -Xclang -disable-O0-optnone, so IR from the toolkit has no optnone on it and passes run on it, which is a deliberate departure from what clang does by default.
+    evidence: cell the_toolkit_flag
+    citation: toolkit/irx/ir.py, Module.from_c
+    confidence: cited

@@ -195,9 +195,35 @@ class Module:
         return re.findall(r"^declare[^@]*@\"?([\w.$-]+)", self.text, re.M)
 
     def function(self, name: str) -> str:
-        """Just one function's text, which is what you want once a module grows."""
+        """A module containing just this function, which is what you want once a
+        module grows.
+
+        Note that this is a whole module, header and attribute groups included,
+        not the function on its own, because llvm-extract is what produces it
+        and a bare function is not something LLVM will read back. Use `body`
+        when you want the define block by itself.
+        """
         result = run("llvm-extract", "-func", name, "-S", "-", stdin=self.text)
         return result.stdout
+
+    def body(self, name: str) -> str:
+        """The define block on its own, from `define` to the closing brace.
+
+        Printing a function is the single most common thing a lesson does, and
+        `function` buries a two line body under a target triple and a screen of
+        target features that differ per machine and teach nobody anything.
+        """
+        match = re.search(rf"^define[^@\n]*@\"?{re.escape(name)}\"?\b.*?^}}",
+                          self.text, re.MULTILINE | re.DOTALL)
+        if match is None:
+            raise KeyError(f"no function {name!r} with a body in {self.name}")
+        return match.group(0)
+
+    def instructions(self, name: str) -> list[str]:
+        """Body lines of a function, without the define, the brace or the block
+        labels. Rough, and good enough to watch a pass do its work."""
+        return [line.strip() for line in self.body(name).splitlines()[1:-1]
+                if line.strip() and not line.strip().endswith(":")]
 
     def count(self, opcode: str) -> int:
         """How many times an instruction appears. Rough, and good enough to watch a pass work."""
