@@ -6,7 +6,7 @@ Every factual claim every lesson makes, with the evidence for it. Written agains
 
 `observed` means somebody ran it, on two platforms. `cited` means it is in the LLVM source or its documentation at the pinned tag, at the line given. `inferred` means neither, and a lesson is allowed at most three.
 
-92 claims: 54 observed, 37 cited, 1 inferred.
+102 claims: 60 observed, 41 cited, 1 inferred.
 
 ## t01_one_line_of_c
 
@@ -121,6 +121,21 @@ Every factual claim every lesson makes, with the evidence for it. Written agains
 | tailcallelim run on its own over the -O0 IR, with nothing else from -O2, is enough to make the program return. So the pass is both necessary within -O2 and sufficient without it. | observed | cells take_it_away and the_suspect_alone<br>measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, the same exit code and the same transformed IR on both |
 | The transformation replaces a self recursive call followed by a return with a branch to the entry of the function, which makes a loop. In the output the call is gone, there is a block named tailrecurse, and there is one phi at the top of it per parameter. | cited | cell the_suspect_alone<br>llvm/lib/Transforms/Scalar/TailRecursionElimination.cpp:9-11@llvmorg-23.1.0, "transforms calls of the current function (self recursion) followed by a return instruction with a branch to the entry of the function, creating a loop" |
 | The transformed function still has its allocas and its loads and stores, because mem2reg is not in this pipeline. Running one pass runs one pass. | observed | cell the_suspect_alone<br>measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, two allocas still present in down on both |
+
+## t08_o2_twice
+
+| Claim | Confidence | Evidence |
+|---|---|---|
+| Running default<O2> twice over sum_to gives a function one instruction shorter than running it once, 16 then 15, and a third run changes nothing. So the fixed point exists here and is two applications away rather than one. | observed | cell run_it_twice<br>measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, the same counts and the same bodies on both |
+| The unoptimised function, the one run version and the twice run version all return 181 for sum_to(100) modulo 251, which is the sum of nought to ninety nine reduced. | observed | cell all_three_agree<br>measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, exit code 181 from lli in all three cases on both |
+| The T07 procedure works with any yes or no property, and searching for the smallest prefix of the second -O2 whose output already equals the final body lands on gvn. | observed | cell where_did_it_change<br>measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, gvn on sum_to on both |
+| The four adds outside the loop appear at the run of indvars, which is where the loop is replaced by a closed form computed before it. | cited | cell the_two_adds<br>llvm/lib/Transforms/Scalar/IndVarSimplify.cpp:9-13@llvmorg-23.1.0, the pass "analyzes and transforms the induction variables (and computations derived from them) into simpler forms suitable for subsequent analysis and transformation" |
+| gvn eliminates fully redundant instructions by numbering them, so it removes a second computation of an expression that is already there and does not rearrange an expression to create one. | cited | cell the_two_adds<br>llvm/lib/Transforms/Scalar/GVN.cpp:9-10@llvmorg-23.1.0, "performs global value numbering to eliminate fully redundant instructions" |
+| Rearranging (n + x) - 1 into (n - 1) + x is reassociate's job, and it exists to put expressions into an order that lets constant propagation and common subexpression elimination fire. | cited | cell the_two_adds<br>llvm/lib/Transforms/Scalar/Reassociate.cpp:9-12@llvmorg-23.1.0, "reassociates commutative expressions in an order that is designed to promote better constant propagation, GCSE, LICM, PRE, etc." with the example "4 + (x + 5) -> x + (4 + 5)" |
+| In the first -O2, reassociate is run 32 and indvars is run 47, so the expression reassociate would have rearranged does not exist until fifteen runs after reassociate has finished. Both numbers are the same on both platforms even though the totals are not. | observed | cell the_two_adds<br>measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, run 32 and run 47 on both, against 111 and 110 total runs |
+| gvn runs after indvars in the first -O2 and sees the closed form, and does not fold it, because at that point the two expressions are not written the same way. Nothing was skipped and no analysis was stale. | observed | cell the_two_adds<br>measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, the same four adds before and after the run of gvn on both |
+| Appending reassociate, instcombine and gvn to one default<O2> reproduces the body two default<O2>s produce, and no smaller subset of the three does. reassociate alone leaves the count unchanged, gvn alone finds nothing, and reassociate with gvn gets the count right and the flags wrong. | observed | cell the_repair<br>measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, the same four outcomes on both |
+| When gvn replaces one instruction with another it patches the survivor so it is not more restrictive than the value it replaced, by intersecting the two sets of flags. That is why merging an add nsw with an add that has no nsw leaves an add with no nsw, and why instcombine has to run in between to put nsw back on the new one. | cited | cell the_repair<br>llvm/lib/Transforms/Utils/Local.cpp:3190-3208@llvmorg-23.1.0, "Patch the replacement so that it is not more restrictive than the value being replaced" followed by ReplInst->andIRFlags(I), reached from llvm/lib/Transforms/Scalar/GVN.cpp:2234-2235@llvmorg-23.1.0 |
 
 ## x03_your_first_fold
 
