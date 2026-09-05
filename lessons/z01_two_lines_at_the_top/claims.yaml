@@ -39,7 +39,7 @@ claims:
     confidence: observed
 
   - id: and-still-emits-a-dead-slot
-    claim: The same function at -O0 also contains an alloca for a slot that has no name in the source and a store of 0 into it that nothing reads. The front end folds an arithmetic expression and does not remove an obviously dead store, in the same function, in the same compile.
+    claim: The same function at -O0 also contains an alloca for a slot that has no name in the source and a store of 0 into it that nothing reads. The front end folds an arithmetic expression and does not remove a store that is plainly dead, in the same function, in the same compile.
     evidence: cell end_to_end
     citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, the same alloca and store on both
     confidence: observed
