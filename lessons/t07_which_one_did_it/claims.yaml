@@ -1,0 +1,68 @@
+# Every factual claim in this lesson, with the evidence for it.
+# confidence is one of: observed, cited, inferred. At most three may be inferred.
+#
+# Everything marked observed was checked on two platforms, macOS arm64 with
+# Homebrew LLVM 23.1.0 and Linux x86_64 running the min bundle's own clang, opt
+# and lli built from llvmorg-23.1.0. The pass the bisect lands on is the same on
+# both. The two numbers that differ between platforms are noted where they
+# appear, and the lesson prints them rather than stating them.
+claims:
+  - id: the-same-source-two-endings
+    claim: A million deep tail recursion compiled at -O0 dies on a signal under lli, and the same source through default<O2> returns the right answer. The signal number is not the same on the two platforms, which is why the lesson prints it.
+    evidence: cell two_answers
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, signal 4 on macOS and signal 11 on Linux, and 1 returned from the optimised build on both
+    confidence: observed
+
+  - id: bisect-numbers-runs-not-entries
+    claim: -opt-bisect-limit numbers pass runs rather than pipeline entries, so the count is larger than the number of entries in the printed default<O2> string. For this two function module it is 192 runs against 120 entries on macOS and 191 against 119 on Linux.
+    evidence: cell the_numbering
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0
+    confidence: observed
+
+  - id: the-limit-is-an-interval
+    claim: -opt-bisect-limit=N is a cap, not only a numbering. It is turned into the interval 1 to N, a limit of 0 means run no passes, and the default of -1 means run all of them.
+    evidence: cells the_numbering and over_the_limit
+    citation: llvm/lib/IR/OptBisect.cpp:31-49@llvmorg-23.1.0, "Convert limit to interval 1-Limit" with the 0 and -1 cases above it
+    confidence: cited
+
+  - id: skipped-passes-say-so
+    claim: Every pass above the limit prints a line saying it was not run, so the log distinguishes a pass that ran from one that was skipped rather than leaving it out.
+    evidence: cell over_the_limit
+    citation: llvm/lib/IR/OptBisect.cpp:89-94@llvmorg-23.1.0, printPassMessage writes "BISECT: " then "NOT " when the pass is not running, then the number, the name and the thing it was handed
+    confidence: cited
+
+  - id: the-prefix-property-makes-it-searchable
+    claim: Because the limit admits a prefix of the runs, any yes or no question about the output is monotone in the limit, so a binary search over it finds the exact run that changes the answer. Here eight probes are enough.
+    evidence: cell the_search
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, eight probes on both, converging on run 37
+    confidence: observed
+
+  - id: the-answer-is-run-37
+    claim: The run that turns the crash into an answer is number 37, tailcallelim on down, on both platforms, even though the two platforms disagree about the total number of runs.
+    evidence: cell the_search
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, "BISECT: running pass (37) tailcallelim on down" on both
+    confidence: observed
+
+  - id: opt-disable-gives-the-other-half
+    claim: -opt-disable takes pass names and switches them off wherever they appear in the pipeline. Running default<O2> with tailcallelim disabled brings the crash back, and disabling simplifycfg, which appears eight times in the same pipeline, changes nothing.
+    evidence: cell take_it_away
+    citation: llvm/lib/IR/OptBisect.cpp:82-87@llvmorg-23.1.0 for the flag, and measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0 for the three outcomes
+    confidence: cited
+
+  - id: the-pass-alone-is-enough
+    claim: tailcallelim run on its own over the -O0 IR, with nothing else from -O2, is enough to make the program return. So the pass is both necessary within -O2 and sufficient without it.
+    evidence: cells take_it_away and the_suspect_alone
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, the same exit code and the same transformed IR on both
+    confidence: observed
+
+  - id: what-tailcallelim-does
+    claim: The transformation replaces a self recursive call followed by a return with a branch to the entry of the function, which makes a loop. In the output the call is gone, there is a block named tailrecurse, and there is one phi at the top of it per parameter.
+    evidence: cell the_suspect_alone
+    citation: llvm/lib/Transforms/Scalar/TailRecursionElimination.cpp:9-11@llvmorg-23.1.0, "transforms calls of the current function (self recursion) followed by a return instruction with a branch to the entry of the function, creating a loop"
+    confidence: cited
+
+  - id: the-allocas-are-untouched
+    claim: The transformed function still has its allocas and its loads and stores, because mem2reg is not in this pipeline. Running one pass runs one pass.
+    evidence: cell the_suspect_alone
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, two allocas still present in down on both
+    confidence: observed
