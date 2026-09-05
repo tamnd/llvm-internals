@@ -1,0 +1,95 @@
+# Every factual claim in this lesson, with the evidence for it.
+# confidence is one of: observed, cited, inferred. At most three may be inferred.
+#
+# Everything marked observed was checked on two platforms, macOS arm64 with
+# Homebrew LLVM 23.1.0 and Linux x86_64 running the min bundle's own clang, opt
+# and lli built from llvmorg-23.1.0. This is a capstone, so most of what it does
+# was established earlier and is cited to the lesson that established it as well
+# as to the source. The numbers differ between the two hosts by exactly the one
+# pass T09 identified: 120 entries against 119, 216 pass runs against 215, 95
+# analyses against 94, and every bisect run number one lower on x86-64. The pass
+# names, the verdicts and the provenance table are identical on both.
+claims:
+  - id: the-survey-is-four-facts-not-one
+    claim: Identifying a toolchain takes the version, the target triple, the data layout and whether the backend for that triple is in the binary. The first three are lines you can read; the fourth is visible because opt warns on stderr when it cannot make a target machine and then builds the generic pipeline instead.
+    evidence: cell q1_what_is_this
+    citation: T09 claims the-triple-alone-decides-it and a-missing-backend-falls-back, remeasured here on macOS arm64 LLVM 23.1.0 giving arm64-apple-macosx15.0.0 and on Linux x86_64 LLVM 23.1.0 giving x86_64-unknown-linux-gnu, backend present on both
+    confidence: observed
+
+  - id: entries-are-not-runs
+    claim: The default<O2> pipeline for this two function module is 120 comma separated entries and 4791 characters on aarch64 and 119 entries and 4770 characters on x86-64, while -debug-pass-manager reports 216 pass runs from 90 distinct passes on aarch64 and 215 from 89 on x86-64. Runs outnumber entries because a function or loop entry runs once per function or loop.
+    evidence: cells q2_what_would_it_run and q3_what_did_run
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, the entry counts matching T09 claim the-pipeline-differs-by-target and the run counts differing by the one aarch64 pass
+    confidence: observed
+
+  - id: counting-entries-needs-the-brackets-off
+    claim: Counting how often a pass name appears in the printed pipeline requires splitting the string on parentheses and commas and dropping the angle bracket parameters, because entries are printed as name<params> and simple substring counting misses them. Done that way simplifycfg appears eight times, loop-deletion twice and indvars once, on both hosts.
+    evidence: cell q2_what_would_it_run
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, the same three counts on both, with loop-idiom-vectorize once on aarch64 and not at all on x86-64
+    confidence: observed
+
+  - id: analyses-are-counted-separately
+    claim: The same -debug-pass-manager log reports 95 analyses computed on aarch64 and 94 on x86-64, alongside the pass runs. Analyses are printed with their own Running analysis: prefix and are not pipeline entries.
+    evidence: cell q3_what_did_run
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, and T06 claims for what the analysis lines mean
+    confidence: observed
+
+  - id: nothing-was-skipped-here
+    claim: The skip count, taken from the lines mentioning due to optnone attribute, is zero for a module produced by irx.compile_c, which passes -Xclang -disable-O0-optnone. A non zero count is the signal that most of the pipeline did not run at all.
+    evidence: cells q3_what_did_run and q5_provenance
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, zero on both, and T11 claims optnone-is-checked-once for the mechanism
+    confidence: observed
+
+  - id: the-predicate-can-ask-an-analysis
+    claim: Whether a loop is still present can be decided by running opt -passes=print<loops> on the candidate IR and looking for Loop at depth, rather than by searching the text for branches or phi nodes. Any predicate that can be automated works as the bisect's test.
+    evidence: cell q4_which_one_did_it
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, the printer reporting the loop for the unoptimised module and nothing for the optimised one on both
+    confidence: observed
+
+  - id: eight-probes-name-a-run
+    claim: A binary search over -opt-bisect-limit, using that predicate, names loop-deletion on loop %for.body in function sum as the run after which the loop is gone. It is run 57 on aarch64 and run 56 on x86-64.
+    evidence: cell q4_which_one_did_it
+    citation: measured on macOS arm64 LLVM 23.1.0 giving (57) loop-deletion and Linux x86_64 LLVM 23.1.0 giving (56) loop-deletion, and T07 claims for the bisect procedure
+    confidence: observed
+
+  - id: the-run-numbers-shift-by-the-extra-pass
+    claim: Every bisect run number in this lesson is exactly one higher on the aarch64 host than on the x86-64 one, because the aarch64 pipeline contains one additional pass, loop-idiom-vectorize, that runs before the loop is deleted. The pass names attached to those numbers are identical.
+    evidence: cells q4_which_one_did_it and q4b_from_both_sides
+    citation: 57 against 56 for loop-deletion, 58 against 57 for loop-unroll-full and 63 against 62 for sccp, measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, with T09 claim the-difference-is-one-pass for the cause
+    confidence: observed
+
+  - id: three-passes-would-have-deleted-it
+    claim: Disabling loop-deletion does not save the loop; the bisect then names loop-unroll-full. Disabling both does not save it either; the bisect then names sccp. Three passes in the -O2 pipeline are each willing to remove this loop once it is dead.
+    evidence: cell q4b_from_both_sides
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, the same two follow up names on both, at runs 58 and 63 on aarch64 and 57 and 62 on x86-64
+    confidence: observed
+
+  - id: indvars-is-the-necessary-one
+    claim: Disabling indvars leaves the loop present at the end of default<O2>, with or without loop-deletion also disabled. It is the only pass tested here whose absence changes the outcome, so it is the pass that made the loop dead rather than the pass that removed it.
+    evidence: cell q4b_from_both_sides
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, loop survives -O2 true for -opt-disable=indvars and for -opt-disable=loop-deletion,indvars, false for -opt-disable=loop-deletion and for -opt-disable=loop-deletion,loop-unroll-full on both
+    confidence: observed
+
+  - id: a-bisect-answers-a-different-question-than-opt-disable
+    claim: -opt-bisect-limit finds the first run after which a property holds. -opt-disable asks whether a named pass was necessary for it. These are different questions, and when their answers disagree the disagreement locates the cause, which is what happens here.
+    evidence: cells q4_which_one_did_it and q4b_from_both_sides
+    citation: llvm/lib/IR/OptBisect.cpp:96-111@llvmorg-23.1.0, OptBisect::shouldRunPass doing int CurBisectNum = ++LastBisectNum and testing it against BisectIntervals, then separately doing ShouldRun && !DisabledPasses.contains(PassName). The first counts runs and stops at a number; the second matches a name. Neither knows which pass mattered.
+    confidence: cited
+
+  - id: four-provenance-bits-are-in-the-file
+    claim: optnone, noinline, the presence of any !tbaa metadata and the presence of a target triple line can all be read from the IR itself. For this module irx.compile_c at -O0 gives no optnone, noinline, no tbaa and a triple; plain clang -O0 gives optnone as well; and clang -O2 gives neither optnone nor noinline and one !tbaa.
+    evidence: cell q5_provenance
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, the same three rows on both, and T11 claims for what each bit changes about the pipeline
+    confidence: observed
+
+  - id: the-tbaa-comes-from-the-load
+    claim: The single !tbaa in the clang -O2 file is attached to the load in first, the only memory access in the module, printed as load i64, ptr %0, align 8, !tbaa !10. A module whose functions do not touch memory can be missing !tbaa without that meaning anything, which is why the check is worth doing on a module that has a load in it.
+    evidence: cell q5_provenance
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, one !tbaa on both, on the load in first and nowhere else. llvm/docs/LangRef.md:7328-7335@llvmorg-23.1.0 for what the metadata is, "In LLVM IR, memory does not have types, so LLVM's own type system is not suitable for doing type based alias analysis (TBAA). Instead, metadata is added to the IR to describe a type system of a higher level language."
+    confidence: observed
+
+  - id: the-five-questions-need-no-second-machine
+    claim: All five questions are answered from one host, one clang and one opt, using only flags: --version, -print-pipeline-passes, -debug-pass-manager, -opt-bisect-limit, -opt-disable and reading the IR. Nothing in the procedure requires building LLVM or reading its source.
+    evidence: cells q1_what_is_this through q5_provenance
+    citation: every cell in this lesson runs in E0, a notebook with real LLVM binaries and no build tree, on both hosts
+    confidence: observed
