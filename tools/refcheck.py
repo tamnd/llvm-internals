@@ -256,10 +256,13 @@ def check_lesson(directory: pathlib.Path, tag: str, src: pathlib.Path | None
         if confidence == "cited" and "/" not in citation and "@" not in citation:
             problems.append(f"{where}: a cited claim needs a pointer, not a sentence")
 
+        # The note fires in both modes on purpose. A citation with no path and
+        # line range is nothing for --llvm-src to resolve, so without the note
+        # the strictest run is the one that says least about it.
+        if confidence == "cited" and not SOURCE_CITE.search(citation):
+            notes.append(f"{where}: citation names no file and line range")
         if src is not None:
             problems.extend(check_source(where, citation, src))
-        elif confidence == "cited" and not SOURCE_CITE.search(citation):
-            notes.append(f"{where}: citation names no file and line range")
 
     if inferred > MAX_INFERRED:
         problems.append(

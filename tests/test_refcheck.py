@@ -109,15 +109,20 @@ class ReferencedCells(unittest.TestCase):
         )
 
 
+def a_lesson(test, claims=CLAIMS, lesson=LESSON):
+    """A directory holding one claims file and one lesson, gone at teardown."""
+    tmp = tempfile.TemporaryDirectory()
+    test.addCleanup(tmp.cleanup)
+    directory = Path(tmp.name) / "demo"
+    directory.mkdir()
+    (directory / "claims.yaml").write_text(claims, encoding="utf-8")
+    (directory / "lesson.py").write_text(lesson, encoding="utf-8")
+    return directory
+
+
 class CheckLesson(unittest.TestCase):
     def build(self, claims=CLAIMS, lesson=LESSON):
-        tmp = tempfile.TemporaryDirectory()
-        self.addCleanup(tmp.cleanup)
-        directory = Path(tmp.name) / "demo"
-        directory.mkdir()
-        (directory / "claims.yaml").write_text(claims, encoding="utf-8")
-        (directory / "lesson.py").write_text(lesson, encoding="utf-8")
-        return directory
+        return a_lesson(self, claims, lesson)
 
     def test_a_good_lesson_has_no_problems(self):
         problems, _, claims = refcheck.check_lesson(self.build(), "llvmorg-23.1.0", None)
@@ -199,6 +204,16 @@ class AgainstASourceTree(unittest.TestCase):
         problems = refcheck.check_source(
             "where", "llvm/lib/IR/Verifier.cpp:10-9000@llvmorg-23.1.0", self.tree())
         self.assertTrue(any("reaches 9000" in p for p in problems), problems)
+
+    def test_a_shapeless_citation_is_still_a_note_here(self):
+        # There is nothing for this mode to resolve, which is the reason to say
+        # so rather than the reason to go quiet.
+        _, notes, _ = refcheck.check_lesson(
+            a_lesson(self, claims=CLAIMS.replace(
+                "llvm/lib/IR/Verifier.cpp:10-20@llvmorg-23.1.0",
+                "the section of LangRef about phi")),
+            "llvmorg-23.1.0", self.tree())
+        self.assertTrue(any("names no file and line range" in n for n in notes), notes)
 
     def test_catches_a_path_that_is_not_there(self):
         problems = refcheck.check_source(
