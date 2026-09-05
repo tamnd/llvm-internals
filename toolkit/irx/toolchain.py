@@ -22,6 +22,7 @@ import tarfile
 import time
 import urllib.error
 import urllib.request
+from collections.abc import Iterator
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -138,7 +139,7 @@ def _from_system() -> tuple[Path, str] | None:
 
 def _from_tarball(verbose: bool) -> tuple[Path, str] | None:
     """The curated build. This is the path the whole E0 story depends on."""
-    name = f"llvm-{TAG}-min-{platform_slug()}.tar.xz"
+    name = f"llvm-{TAG}-min-{platform_slug()}.tar.zst"
     url = f"{RELEASES}/toolchain-{TAG}/{name}"
     target = CACHE / TAG
     archive = CACHE / name
@@ -156,16 +157,73 @@ def _from_tarball(verbose: bool) -> tuple[Path, str] | None:
     return (bindir, "the pinned tarball") if (bindir / "opt").exists() else None
 
 
+def _strip1(tar: tarfile.TarFile) -> Iterator[tarfile.TarInfo]:
+    """tarfile has no --strip-components, so drop the leading path element.
+
+    The bundle is one directory named for the tag with bin/ lib/ include/
+    inside it, and every caller wants those at the root of the target. A
+    member that is only the top directory disappears, which is correct: the
+    target already exists.
+    """
+    for member in tar:
+        _, sep, rest = member.name.partition("/")
+        if not sep or not rest:
+            continue
+        member.name = rest
+        if member.islnk():
+            # Hard link targets are archive-relative and need the same cut,
+            # or they point at a path that was never extracted.
+            _, link_sep, link_rest = member.linkname.partition("/")
+            if link_sep and link_rest:
+                member.linkname = link_rest
+        yield member
+
+
 def _unpack(archive: Path, target: Path) -> None:
+    """Unpack the zstd bundle, in descending order of how fast it is.
+
+    The archive is packed with a default window so no decompressor needs a
+    matching flag, but zstd support still has to come from somewhere, and on
+    Python before 3.14 it cannot come from tarfile.
+    """
     target.mkdir(parents=True, exist_ok=True)
+
+    # The system tar is several times faster than anything in Python on a
+    # 285 MB archive, and the bootstrap has a wall clock budget. GNU tar and
+    # bsdtar both take --zstd; older GNU tar does not, hence the pipe below.
     if shutil.which("tar"):
-        # The system tar is several times faster than Python's tarfile on a big
-        # archive, and the bootstrap has a wall clock budget.
-        subprocess.run(["tar", "-xf", str(archive), "-C", str(target), "--strip-components=1"],
-                       check=True)
+        for argv in (
+            ["tar", "--zstd", "-xf", str(archive)],
+            ["tar", "-I", "zstd", "-xf", str(archive)],
+        ):
+            done = subprocess.run([*argv, "-C", str(target), "--strip-components=1"],
+                                  capture_output=True, check=False)
+            if done.returncode == 0:
+                return
+
+    # Python 3.14 taught tarfile zstd; anything older raises here and falls
+    # through to the zstd binary.
+    try:
+        with tarfile.open(archive, "r:zst") as tar:
+            tar.extractall(target, members=_strip1(tar), filter="data")
         return
-    with tarfile.open(archive) as tar:
-        tar.extractall(target, filter="data")
+    except (tarfile.ReadError, tarfile.CompressionError):
+        pass
+
+    if shutil.which("zstd"):
+        with subprocess.Popen(["zstd", "-dc", str(archive)],
+                              stdout=subprocess.PIPE) as proc:
+            with tarfile.open(fileobj=proc.stdout, mode="r|") as tar:
+                tar.extractall(target, members=_strip1(tar), filter="data")
+        if proc.returncode not in (0, None):
+            raise RuntimeError(f"zstd failed to decompress {archive.name}")
+        return
+
+    raise RuntimeError(
+        f"cannot unpack {archive.name}: no tar with zstd support, no zstd "
+        "binary, and this Python's tarfile does not read zstd. "
+        "Install zstd, or use a local LLVM instead."
+    )
 
 
 def _from_apt(verbose: bool) -> tuple[Path, str] | None:
