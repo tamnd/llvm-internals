@@ -148,5 +148,15 @@ def run(
 
 
 def version() -> str:
-    """The version string of the toolchain we are actually using."""
-    return run("opt", "--version").stdout.split("\n")[0].strip()
+    """The version string of the toolchain we are actually using.
+
+    Not the first line. A vendored build puts the version there, as in
+    "Homebrew LLVM version 23.1.0", and a stock one puts "LLVM
+    (http://llvm.org/):" there and the version on the line below. Taking the
+    first line gets a URL on every build somebody made themselves.
+    """
+    lines = [line.strip() for line in run("opt", "--version").stdout.splitlines() if line.strip()]
+    for line in lines:
+        if "version" in line.lower():
+            return line
+    return lines[0] if lines else ""
