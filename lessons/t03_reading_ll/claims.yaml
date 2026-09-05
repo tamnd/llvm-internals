@@ -1,0 +1,67 @@
+# Every factual claim in this lesson, with the evidence for it.
+# confidence is one of: observed, cited, inferred. At most three may be inferred.
+#
+# Everything marked observed was checked on two platforms, macOS arm64 with
+# Homebrew LLVM 23.1.0 and Linux x86_64 running the min bundle's own clang, opt
+# and lli built from llvmorg-23.1.0. The IR is identical on the two apart from
+# the word dso_local, and the three lli exit codes are the same on both.
+claims:
+  - id: preds-comments-give-the-cfg
+    claim: Every block label in clang's output carries a generated "; preds =" comment listing the blocks that can branch to it, and a loop header is a block with a predecessor that appears below it.
+    evidence: cell the_loop_at_o0
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, for.cond lists for.inc and entry on both
+    confidence: observed
+
+  - id: two-shapes-of-branch
+    claim: Control flow at this level is only blocks and two shapes of br, an unconditional br label and a conditional br i1 that takes a one bit condition and two labels, true first.
+    evidence: cell the_loop_at_o0
+    citation: llvm/docs/LangRef.md, the br instruction@llvmorg-23.1.0
+    confidence: cited
+
+  - id: ssa-does-not-cover-memory
+    claim: SSA constrains registers and not memory. A stack slot may be stored to any number of times, which is how clang emits a loop that assigns total on every iteration while every register in the function is assigned once.
+    evidence: cell the_loop_at_o0
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, three allocas and eight load or store instructions and no phi at -O0 on both
+    confidence: observed
+
+  - id: mem2reg-introduces-the-phis
+    claim: Running mem2reg alone on the -O0 loop removes all three allocas and the eight load and store instructions and produces two phi instructions at the top of the loop header, leaving the five blocks and the branches between them unchanged.
+    evidence: cell mem2reg
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, identical output on both apart from dso_local
+    confidence: observed
+
+  - id: a-phi-has-one-pair-per-predecessor
+    claim: A phi is a list of value and label pairs, one for each predecessor of its block, and the value it takes is the one paired with the block control arrived from.
+    evidence: cell mem2reg
+    citation: llvm/docs/LangRef.md:13370-13372@llvmorg-23.1.0, "At runtime, the phi instruction logically takes on the value specified by the pair corresponding to the predecessor basic block that executed just prior to the current block"
+    confidence: cited
+
+  - id: phis-can-refer-to-each-other
+    claim: A swap inside a loop compiles, after mem2reg, to two phi instructions in the same block each of which names the other, and the first of them names a value defined on the line below it.
+    evidence: cell the_swap
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, the same two lines in the same order on both
+    confidence: observed
+
+  - id: the-swap-really-swaps
+    claim: Executing that IR with lli gives 20, 10 and 20 for one, two and three iterations, so the pair really alternates. Reading the two phis as assignments in order predicts 10 for every count above one.
+    evidence: cell run_it
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, exit codes 20, 10, 20 on both
+    confidence: observed
+
+  - id: phi-uses-happen-on-the-edge
+    claim: The phis in a block all take effect together on the edge into the block, and each reads its incoming value as it was in the predecessor. LangRef puts the use of each incoming value on the edge from the predecessor rather than at the point in the block where the phi appears.
+    evidence: cells the_swap and run_it
+    citation: llvm/docs/LangRef.md:13358-13361@llvmorg-23.1.0
+    confidence: cited
+
+  - id: phi-is-exempt-from-dominance
+    claim: Because a phi's use of an incoming value happens on the edge rather than inside the block, a phi may name a value defined below it, while an ordinary instruction that does the same is rejected with "Instruction does not dominate all uses!".
+    evidence: cells the_swap and the_two_rules
+    citation: llvm/lib/IR/Verifier.cpp:5211@llvmorg-23.1.0, message reproduced on both platforms
+    confidence: cited
+
+  - id: phis-must-be-first-in-the-block
+    claim: A phi may not have an ordinary instruction above it in its block. The verifier rejects that with "PHI nodes not grouped at top of basic block!", and the rule is what makes the dominance exemption well defined.
+    evidence: cell the_two_rules
+    citation: llvm/lib/IR/Verifier.cpp:3804@llvmorg-23.1.0 and llvm/docs/LangRef.md:13354-13356@llvmorg-23.1.0, "There must be no non-phi instructions between the start of a basic block and the PHI instructions", message reproduced on both platforms
+    confidence: cited
