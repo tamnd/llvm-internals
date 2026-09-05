@@ -1,0 +1,76 @@
+# Every factual claim in this lesson, with the evidence for it.
+# confidence is one of: observed, cited, inferred. At most three may be inferred.
+#
+# Everything marked observed was checked on two platforms, macOS arm64 with
+# Homebrew LLVM 23.1.0 and Linux x86_64 running the min bundle's own clang, opt
+# and lli built from llvmorg-23.1.0. The attribute groups clang writes differ
+# between the two hosts in the parts that name the ABI, ssp and uwtable on macOS
+# and none of that on Linux, so the lesson prints the group rather than stating
+# it and the claim names only the three attributes that are the same on both.
+# The count of skipped passes is printed for the same reason.
+claims:
+  - id: the-two-routes-agree-on-one-function
+    claim: For a loop, a conditional, a floating point expression, a self recursive function and a switch, clang -O2 and clang -O0 followed by opt -passes=default<O2> produce the same instructions in the same order, once value names are normalised away.
+    evidence: cell five_that_agree
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, five agreements on both
+    confidence: observed
+
+  - id: the-inliner-does-not-fire-on-o0-ir
+    claim: For a module with a static helper called twice, clang -O2 inlines the helper and folds the result to 6n + 3, while the -O0 then opt route leaves both calls in place. The pipeline contains the inliner in both cases.
+    evidence: cell the_call_that_did_not_inline
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, the same two bodies on both
+    confidence: observed
+
+  - id: clang-o0-writes-three-attributes
+    claim: clang at -O0 gives every function the attributes noinline, nounwind and optnone, among others that depend on the platform. Passing -Xclang -disable-O0-optnone removes optnone and leaves noinline untouched.
+    evidence: cell what_the_o0_file_says
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, the same three attributes present and the same one removed on both
+    confidence: observed
+
+  - id: the-toolkit-passes-that-flag
+    claim: irx.compile_c invokes clang with -Xclang -disable-O0-optnone, which is why every lesson in this book has been able to run passes over -O0 output at all.
+    evidence: cell what_the_o0_file_says
+    citation: toolkit/irx/ir.py:148-156, Module.from_c passing "-Xclang", "-disable-O0-optnone" with a comment saying that without it clang marks the functions
+    confidence: cited
+
+  - id: optnone-stops-nearly-everything
+    claim: Running default<O2> over IR that still carries optnone leaves the function with the instruction count it started with. Around ninety passes are skipped with a message naming the attribute, and the forty that run are module level passes, which are handed the module rather than a function.
+    evidence: cell optnone_is_a_wall
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, 26 instructions before and after on both, and the same first two skip lines
+    confidence: observed
+
+  - id: one-callback-does-the-skipping
+    claim: The skipping is not implemented inside each pass. OptNoneInstrumentation registers a single should run callback with the pass instrumentation machinery, which answers false for any function, loop or machine function whose function has optnone, and prints the message the lesson shows when debug logging is on.
+    evidence: cell optnone_is_a_wall
+    citation: llvm/lib/Passes/StandardInstrumentations.cpp:1032-1053@llvmorg-23.1.0, registerCallbacks calling registerShouldRunOptionalPassCallback and shouldRun testing F->hasOptNone() before printing "Skipping pass ... due to optnone attribute"
+    confidence: cited
+
+  - id: optnone-requires-noinline
+    claim: optnone means most optimisation passes skip the function, with interprocedural passes excepted, and it requires noinline to be present as well so that the function is never inlined into any caller. Removing optnone therefore leaves a function that is still closed to the inliner.
+    evidence: cells what_the_o0_file_says and putting_the_inlining_back
+    citation: llvm/docs/LangRef.md:2545-2556@llvmorg-23.1.0, "This function attribute indicates that most optimization passes will skip this function" and "This attribute requires the noinline attribute to be specified on the function as well, so the function is never inlined into any caller"
+    confidence: cited
+
+  - id: forceattrs-puts-it-back
+    claim: Running forceattrs with -force-remove-attribute=g:noinline before default<O2> makes the -O0 route produce the same instructions as clang -O2, which confirms that the missing attribute removal, and nothing else, was the cause.
+    evidence: cell putting_the_inlining_back
+    citation: llvm/lib/Transforms/IPO/ForceFunctionAttrs.cpp:20-38@llvmorg-23.1.0 for the force-attribute and force-remove-attribute options, documented with the example -force-attribute=foo:noinline, and measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0
+    confidence: cited
+
+  - id: o0-ir-has-no-tbaa
+    claim: clang emits no !tbaa metadata at -O0 and emits it at -O2. For a function that stores through an int pointer, stores through a float pointer and then loads the first again, clang -O2 folds the load to the constant and the -O0 then opt route keeps the load.
+    evidence: cell the_metadata_that_is_not_there
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, two tbaa nodes and ret i32 1 from clang -O2, none and a surviving load from the other route
+    confidence: observed
+
+  - id: fno-strict-aliasing-reproduces-it
+    claim: clang -O2 -fno-strict-aliasing emits no !tbaa and keeps the load, landing on the same body as the -O0 then opt route. So the difference is the metadata in the input and not the passes that ran.
+    evidence: cell the_metadata_that_is_not_there
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, the same three rows on both
+    confidence: observed
+
+  - id: tbaa-is-metadata-not-types
+    claim: LLVM IR does not put types on memory, so type based alias analysis is driven by metadata the front end attaches, describing the type system of the source language, which TypeBasedAliasAnalysis reads back.
+    evidence: cell the_metadata_that_is_not_there
+    citation: llvm/lib/Analysis/TypeBasedAliasAnalysis.cpp:9-20@llvmorg-23.1.0, "In LLVM IR, memory does not have types, so LLVM's own type system is not suitable for doing TBAA. Instead, metadata is added to the IR to describe a type system of a higher level language."
+    confidence: cited
