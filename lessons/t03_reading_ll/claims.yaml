@@ -33,7 +33,7 @@ claims:
   - id: a-phi-has-one-pair-per-predecessor
     claim: A phi is a list of value and label pairs, one for each predecessor of its block, and the value it takes is the one paired with the block control arrived from.
     evidence: cell mem2reg
-    citation: llvm/docs/LangRef.md:13370-13372@llvmorg-23.1.0, "At runtime, the phi instruction logically takes on the value specified by the pair corresponding to the predecessor basic block that executed just prior to the current block"
+    citation: llvm/docs/LangRef.md:13370-13372@llvmorg-23.1.0, "the phi instruction logically takes on the value specified by the pair corresponding to the predecessor basic block that executed" immediately before the current one
     confidence: cited
 
   - id: phis-can-refer-to-each-other

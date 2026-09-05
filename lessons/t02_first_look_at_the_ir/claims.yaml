@@ -35,7 +35,7 @@ claims:
 
   - id: typed-pointers-cost-bitcasts
     claim: Typed pointers forced the front end to emit no-op bitcasts purely to satisfy the type system, cost memory and compile time, and made passes miss optimisations when they failed to look through one. Removing the pointee type removed that whole category.
-    evidence: cell old_syntax, prose
+    evidence: cell old_syntax, and the prose that follows it
     citation: llvm/docs/OpaquePointers.rst:78-90@llvmorg-23.1.0
     confidence: cited
 

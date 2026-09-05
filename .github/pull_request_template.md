@@ -5,6 +5,7 @@
 ## Checks
 
 - [ ] `python tools/prosecheck.py .` is clean
+- [ ] `python tools/refcheck.py` is clean, and `--ledger` leaves `docs/claims.md` unchanged
 - [ ] No number in the prose was typed by hand
 - [ ] Every citation is `path:line@llvmorg-23.1.0` and resolves
 - [ ] Any claim about what is default, experimental or in progress carries a date and the command that establishes it
