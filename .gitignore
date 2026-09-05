@@ -4,7 +4,10 @@
 /.venv/
 __pycache__/
 *.pyc
-# setuptools leftovers from building the toolkit as a wheel
+# setuptools leftovers from building the toolkit as a wheel. An editable
+# install leaves a bdist directory next to lib/, so ignore the whole tree
+# rather than the one subdirectory that turned up first.
+/toolkit/build/
 build/lib/
 *.egg-info/
 

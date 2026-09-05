@@ -779,6 +779,43 @@ class TestAgainstRealLLVM(unittest.TestCase):
         one = irx.Module.from_ll(whole.function("square"), name="square")
         self.assertEqual(one.functions, ["square"])
 
+    def test_body_is_the_define_block_and_nothing_else(self):
+        whole = irx.Module.from_c(C_SOURCE)
+        body = whole.body("square")
+        self.assertTrue(body.startswith("define"))
+        self.assertTrue(body.endswith("}"))
+        # The things function() drags along and body() is for not dragging.
+        self.assertNotIn("target triple", body)
+        self.assertNotIn("attributes #", body)
+        # One function, not the pair, and not the one whose name is a prefix
+        # match of nothing in particular.
+        self.assertNotIn("@twice", body)
+
+    def test_body_says_which_function_it_could_not_find(self):
+        with self.assertRaises(KeyError) as caught:
+            irx.Module.from_c(C_SOURCE).body("nosuch")
+        self.assertIn("nosuch", str(caught.exception))
+
+    def test_a_declaration_has_no_body(self):
+        # `declare` lines match neither the define anchor nor the brace, and a
+        # regex that got this wrong would return the next function's body.
+        module = irx.Module.from_ll(
+            'declare i32 @ext(i32)\ndefine i32 @f() {\n  ret i32 0\n}\n')
+        with self.assertRaises(KeyError):
+            module.body("ext")
+        self.assertIn("ret i32 0", module.body("f"))
+
+    def test_instructions_drops_the_labels_and_counts_a_pass_working(self):
+        module = irx.Module.from_c("int add(int a, int b) { return a + b; }")
+        before = module.instructions("add")
+        self.assertNotIn("entry:", before)
+        self.assertTrue(all(not line.endswith(":") for line in before))
+        # sroa is the pass that turns those stack slots into registers, so the
+        # count has to drop, and the add and the ret are what is left.
+        after = module.opt("sroa").instructions("add")
+        self.assertLess(len(after), len(before))
+        self.assertEqual(len(after), 2)
+
     def test_asm_comes_out_as_text(self):
         asm = irx.Module.from_c("int f(int x) { return x + x; }").asm()
         self.assertIn("f:", asm)
