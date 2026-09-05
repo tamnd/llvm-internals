@@ -1,0 +1,63 @@
+# Every factual claim in this lesson, with the evidence for it.
+# confidence is one of: observed, cited, inferred. At most three may be inferred.
+#
+# Everything marked observed was checked on two platforms, macOS arm64 with
+# Homebrew LLVM 23.1.0 and Linux x86_64 running the min bundle's own clang, opt
+# and lli built from llvmorg-23.1.0. The one thing that differs between them is
+# the toolchain's source line, which names where the binaries were found and is
+# a property of the machine rather than of LLVM. Every other line of output in
+# this lesson is identical on both hosts.
+claims:
+  - id: the-bootstrap-prints-two-facts
+    claim: The cell build.py prepends to every lesson prints which LLVM was found and where it came from, and then which environment the notebook is in. Both are available afterwards as irx.current() and irx.describe().
+    evidence: cell where_am_i
+    citation: toolkit/irx/env.py:70-78 for describe, returning one of three sentences, and measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, both reporting E0 with the version the bootstrap printed
+    confidence: observed
+
+  - id: the-ladder-has-three-rungs
+    claim: E0 is a notebook with real LLVM binaries and no build tree, E1 is a machine with a build tree, and E2 is a browser with no subprocesses, which runs against Compiler Explorer instead. The environment is detected rather than configured.
+    evidence: cell where_am_i
+    citation: toolkit/irx/env.py:70-78, describe returning "E2, a browser. No subprocesses here, so this runs against Compiler Explorer.", "E1, a local machine with a build tree at ..." and "E0, ... Real LLVM binaries, no build tree, so no in tree modification."
+    confidence: cited
+
+  - id: the-book-is-pinned-to-one-tag
+    claim: The repository pins one LLVM tag, llvmorg-23.1.0, and every citation in every lesson carries that tag as a suffix. Moving the pin is treated as a milestone rather than a commit.
+    evidence: cell the_version_is_the_point
+    citation: docs/pin.json, tag llvmorg-23.1.0 released 2026-08-25, citation_suffix @llvmorg-23.1.0, with the note that moving it is a milestone and not a commit
+    confidence: cited
+
+  - id: two-ways-to-ask-the-version-agree
+    claim: The first line of clang --version and irx.version() report the same LLVM version, and both name the vendor of the build, Homebrew on macOS and a plain build on Linux. The vendor prefix differs between hosts; the version number does not.
+    evidence: cell the_version_is_the_point
+    citation: measured on macOS arm64 giving "Homebrew clang version 23.1.0" and "Homebrew LLVM version 23.1.0", and on Linux x86_64 giving "clang version 23.1.0" and "LLVM version 23.1.0"
+    confidence: observed
+
+  - id: the-front-end-folds-constants
+    claim: int main(void) { return 6 * 7; } compiled at -O0 with no optimiser involved produces ret i32 42. There is no multiply instruction in the IR, because constant folding of that expression happens while clang builds the IR rather than in a pass.
+    evidence: cell end_to_end
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, ret i32 42 in the body on both
+    confidence: observed
+
+  - id: and-still-emits-a-dead-slot
+    claim: The same function at -O0 also contains an alloca for a slot that has no name in the source and a store of 0 into it that nothing reads. The front end folds an arithmetic expression and does not remove a store that is plainly dead, in the same function, in the same compile.
+    evidence: cell end_to_end
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, the same alloca and store on both
+    confidence: observed
+
+  - id: lli-runs-the-text
+    claim: lli executes LLVM IR given as text on standard input, without any machine code file being produced, and the value returned by main becomes the process exit status. For this program that status is 42.
+    evidence: cell end_to_end
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, exit status 42 on both
+    confidence: observed
+
+  - id: a-failing-tool-produces-nothing
+    claim: clang given a C file that names an undeclared identifier exits non zero, writes nothing at all to standard output rather than a partial file, and writes a diagnostic naming the line, the column and the symbol.
+    evidence: cell when_it_breaks
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, exit code 1, empty stdout and the message <stdin>:1:22: error, use of undeclared identifier 'q' on both
+    confidence: observed
+
+  - id: check-false-is-how-you-keep-a-failure
+    claim: irx.run raises on a non zero exit by default and returns the result untouched when check is false. A lesson that is deliberately provoking a failure has to ask for it, so an unexpected failure is never silently read as data.
+    evidence: cell when_it_breaks
+    citation: toolkit/irx/proc.py:145-147, the run function ending with if check and not result.ok, raise ToolError(result), return result
+    confidence: cited

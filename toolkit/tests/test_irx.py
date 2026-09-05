@@ -204,6 +204,41 @@ class TestToolGuard(unittest.TestCase):
             self.assertIn(tool, toolchain.TOOLS)
 
 
+class TestVersionLine(unittest.TestCase):
+    """Two builds print --version differently and both have to work.
+
+    A vendored build puts the version on the first line. A build somebody made
+    themselves puts a URL there and the version underneath, so taking the first
+    line hands the reader "LLVM (http://llvm.org/):" and calls it a version.
+    """
+
+    def picked_from(self, output):
+        original = proc.run
+        proc.run = lambda *a, **k: proc.Result(
+            tool="opt", argv=["opt", "--version"], code=0, stdout=output, stderr="", seconds=0.0)
+        try:
+            return proc.version()
+        finally:
+            proc.run = original
+
+    def test_vendored_build_puts_it_first(self):
+        self.assertEqual(
+            self.picked_from("Homebrew LLVM version 23.1.0\n  Optimized build.\n"),
+            "Homebrew LLVM version 23.1.0")
+
+    def test_stock_build_puts_a_url_first(self):
+        self.assertEqual(
+            self.picked_from("LLVM (http://llvm.org/):\n  LLVM version 23.1.0\n"
+                             "  Optimized build.\n"),
+            "LLVM version 23.1.0")
+
+    def test_nothing_recognisable_falls_back_to_the_first_line(self):
+        self.assertEqual(self.picked_from("something else entirely\n"), "something else entirely")
+
+    def test_no_output_at_all_is_not_an_index_error(self):
+        self.assertEqual(self.picked_from(""), "")
+
+
 class TestBootstrapOrder(unittest.TestCase):
     """The fall through rules, with every source stubbed out.
 

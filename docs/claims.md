@@ -6,7 +6,7 @@ Every factual claim every lesson makes, with the evidence for it. Written agains
 
 `observed` means somebody ran it, on two platforms. `cited` means it is in the LLVM source or its documentation at the pinned tag, at the line given. `inferred` means neither, and a lesson is allowed at most three.
 
-153 claims: 94 observed, 57 cited, 2 inferred.
+162 claims: 100 observed, 60 cited, 2 inferred.
 
 ## t01_one_line_of_c
 
@@ -225,4 +225,18 @@ Every factual claim every lesson makes, with the evidence for it. Written agains
 | The pass plugin header is llvm/Plugins/PassPlugin.h in LLVM 23, not llvm/Passes/PassPlugin.h. | observed | cell plugin<br>llvm/include/llvm/Plugins/PassPlugin.h@llvmorg-23.1.0 |
 | Both plugins in this lesson are loaded into one opt process, and without an anonymous namespace the second pass class resolves to the first one's symbols and silently runs the wrong code. | observed | measured on macOS arm64 while writing this lesson, which is how the bug was found<br> |
 | Each %%irxplug cell compiles and loads in under two seconds, well inside the twenty second budget the lesson was designed against. | observed | cell plugin, cell plugin2<br> |
+
+## z01_two_lines_at_the_top
+
+| Claim | Confidence | Evidence |
+|---|---|---|
+| The cell build.py prepends to every lesson prints which LLVM was found and where it came from, and then which environment the notebook is in. Both are available afterwards as irx.current() and irx.describe(). | observed | cell where_am_i<br>toolkit/irx/env.py:70-78 for describe, returning one of three sentences, and measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, both reporting E0 with the version the bootstrap printed |
+| E0 is a notebook with real LLVM binaries and no build tree, E1 is a machine with a build tree, and E2 is a browser with no subprocesses, which runs against Compiler Explorer instead. The environment is detected rather than configured. | cited | cell where_am_i<br>toolkit/irx/env.py:70-78, describe returning "E2, a browser. No subprocesses here, so this runs against Compiler Explorer.", "E1, a local machine with a build tree at ..." and "E0, ... Real LLVM binaries, no build tree, so no in tree modification." |
+| The repository pins one LLVM tag, llvmorg-23.1.0, and every citation in every lesson carries that tag as a suffix. Moving the pin is treated as a milestone rather than a commit. | cited | cell the_version_is_the_point<br>docs/pin.json, tag llvmorg-23.1.0 released 2026-08-25, citation_suffix @llvmorg-23.1.0, with the note that moving it is a milestone and not a commit |
+| The first line of clang --version and irx.version() report the same LLVM version, and both name the vendor of the build, Homebrew on macOS and a plain build on Linux. The vendor prefix differs between hosts; the version number does not. | observed | cell the_version_is_the_point<br>measured on macOS arm64 giving "Homebrew clang version 23.1.0" and "Homebrew LLVM version 23.1.0", and on Linux x86_64 giving "clang version 23.1.0" and "LLVM version 23.1.0" |
+| int main(void) { return 6 * 7; } compiled at -O0 with no optimiser involved produces ret i32 42. There is no multiply instruction in the IR, because constant folding of that expression happens while clang builds the IR rather than in a pass. | observed | cell end_to_end<br>measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, ret i32 42 in the body on both |
+| The same function at -O0 also contains an alloca for a slot that has no name in the source and a store of 0 into it that nothing reads. The front end folds an arithmetic expression and does not remove a store that is plainly dead, in the same function, in the same compile. | observed | cell end_to_end<br>measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, the same alloca and store on both |
+| lli executes LLVM IR given as text on standard input, without any machine code file being produced, and the value returned by main becomes the process exit status. For this program that status is 42. | observed | cell end_to_end<br>measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, exit status 42 on both |
+| clang given a C file that names an undeclared identifier exits non zero, writes nothing at all to standard output rather than a partial file, and writes a diagnostic naming the line, the column and the symbol. | observed | cell when_it_breaks<br>measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, exit code 1, empty stdout and the message <stdin>:1:22: error, use of undeclared identifier 'q' on both |
+| irx.run raises on a non zero exit by default and returns the result untouched when check is false. A lesson that is deliberately provoking a failure has to ask for it, so an unexpected failure is never silently read as data. | cited | cell when_it_breaks<br>toolkit/irx/proc.py:145-147, the run function ending with if check and not result.ok, raise ToolError(result), return result |
 
