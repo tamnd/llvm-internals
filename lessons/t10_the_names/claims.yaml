@@ -1,0 +1,84 @@
+# Every factual claim in this lesson, with the evidence for it.
+# confidence is one of: observed, cited, inferred. At most three may be inferred.
+#
+# Everything marked observed was checked on two platforms, macOS arm64 with
+# Homebrew LLVM 23.1.0 and Linux x86_64 running the min bundle's own clang, opt
+# and lli built from llvmorg-23.1.0. The error messages are identical on both
+# apart from the program name in front of them, which the lesson strips. Every
+# line of output in this lesson is identical on the two hosts, including the
+# section counts from --print-passes, which are the same because that listing is
+# printed before any target has been chosen. The counts are printed rather than
+# stated all the same, since a build with a different set of backends could move
+# the machine function numbers.
+claims:
+  - id: names-are-exact-strings
+    claim: Pass names are matched as exact strings. instcomb, InstCombine and inst-combine are all rejected with unknown pass name, while instcombine is accepted. There is no case folding, no abbreviation and no suggestion of a near miss.
+    evidence: cell four_ways_to_be_wrong
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, the same four verdicts on both
+    confidence: observed
+
+  - id: two-kinds-of-rejection
+    claim: instcombine<foo> is rejected with invalid InstCombine pass parameter 'foo' rather than with unknown pass name, so the message distinguishes a name that was never recognised from one that was recognised and then given a parameter it does not take. instcombine<max-iterations=3> is accepted.
+    evidence: cell four_ways_to_be_wrong
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, the same two verdicts on both
+    confidence: observed
+
+  - id: the-unknown-name-error-is-the-module-parser
+    claim: The unknown pass name message comes from the module level parser, after it has tried the CGSCC, function, loop nest, loop and machine function levels in that order and none of them recognised the name. The same function prints unknown pipeline name instead when the failing entry had a nested pipeline.
+    evidence: cells four_ways_to_be_wrong and downhill_only
+    citation: llvm/lib/Passes/PassBuilder.cpp:2707-2749@llvmorg-23.1.0, PassBuilder::parsePassPipeline for a ModulePassManager, ending in formatv("unknown {} name '{}'", (InnerPipeline.empty() ? "pass" : "pipeline"), FirstName)
+    confidence: cited
+
+  - id: print-passes-is-organised-by-level
+    claim: opt --print-passes prints the vocabulary in sections by level, module, CGSCC, function, loop nest and loop, each with its passes, its passes that take parameters and its analyses, plus machine module and machine function sections marked (WIP). Function passes are the largest group by a wide margin.
+    evidence: cell the_printed_vocabulary
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, the same section headings on both and function passes the largest group on both
+    confidence: observed
+
+  - id: target-passes-have-their-own-registry
+    claim: A backend contributes pass names through its own registry file. AArch64PassRegistry.def lists aarch64-sve-shuffle-opts as its one LOOP_PASS, and X86PassRegistry.def lists x86-partial-reduction and x86-lower-amx-type among its FUNCTION_PASS lines.
+    evidence: cell the_target_brings_names
+    citation: llvm/lib/Target/AArch64/AArch64PassRegistry.def:27-31@llvmorg-23.1.0 for the one LOOP_PASS line, and llvm/lib/Target/X86/X86PassRegistry.def:22-27@llvmorg-23.1.0 for the three FUNCTION_PASS lines including x86-lower-amx-type and x86-partial-reduction
+    confidence: cited
+
+  - id: the-registry-is-included-by-the-target-machine
+    claim: The backend pulls its registry in by defining GET_PASS_REGISTRY to the file name and including TargetPassRegistry.inc, which includes that file repeatedly with the macros defined differently each time, once to build a name matcher and once to construct the pass. This is the same function T09 quoted for the extension point.
+    evidence: cell the_target_brings_names
+    citation: llvm/lib/Target/AArch64/AArch64TargetMachine.cpp:620-622@llvmorg-23.1.0 for the define and include, and llvm/include/llvm/Passes/TargetPassRegistry.inc:37-137@llvmorg-23.1.0 for the repeated includes of GET_PASS_REGISTRY under different macro definitions
+    confidence: cited
+
+  - id: the-vocabulary-depends-on-the-triple
+    claim: x86-partial-reduction and x86-lower-amx-type are accepted for a module whose triple is x86_64-unknown-linux-gnu and rejected as unknown pass name for one whose triple is aarch64-unknown-linux-gnu. aarch64-sve-shuffle-opts is accepted and rejected the other way round. All six results come from one opt binary.
+    evidence: cell the_target_brings_names
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, the same six verdicts on both
+    confidence: observed
+
+  - id: print-passes-cannot-list-them
+    claim: None of those three target pass names appears in opt --print-passes, because that listing is printed without an input file and therefore without a triple to select a backend.
+    evidence: cells the_printed_vocabulary and the_target_brings_names
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, an empty list on both
+    confidence: observed
+
+  - id: adaptors-go-downwards-only
+    claim: A narrower pass named in a wider place is wrapped for you, so instcombine and cgscc(instcombine) are both accepted. A wider pass named in a narrower place is an error, so function(globalopt) fails with unknown function pass and loop(instcombine) with unknown loop pass. The error names the level whose parser gave up.
+    evidence: cell downhill_only
+    citation: llvm/lib/Passes/PassBuilder.cpp:2719-2735@llvmorg-23.1.0 for the wrapping, trying module, CGSCC, function, loop nest, loop and machine function in that order, and llvm/lib/Passes/PassBuilder.cpp:2485-2487@llvmorg-23.1.0 for the unknown function pass message
+    confidence: cited
+
+  - id: the-wrapping-is-visible
+    claim: Printing the pipeline built from a single name shows the adaptors that were inserted. globalopt stays as globalopt, instcombine becomes function(instcombine<max-iterations=1;verify-fixpoint>) and licm becomes function(loop-mssa(licm<allowspeculation>)), which is two levels of adaptor and the memory analysis variant.
+    evidence: cell downhill_only
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, the same three strings on both
+    confidence: observed
+
+  - id: licm-forces-loop-mssa
+    claim: The parser hardcodes two names, licm and lnicm, as requiring the loop-mssa adaptor rather than loop. The check happens before any registry is consulted, which is why a bare licm comes out wrapped in loop-mssa.
+    evidence: cell licm_is_special
+    citation: llvm/lib/Passes/PassBuilder.cpp:1984-1993@llvmorg-23.1.0, isLoopPassName setting UseMemorySSA to true when checkParametrizedPassName matches "licm", with the same for "lnicm" in isLoopNestPassName above it
+    confidence: cited
+
+  - id: loop-licm-parses-and-then-dies
+    claim: Writing loop(licm) explicitly overrides that choice. It parses, and then LICMPass::run finds no MemorySSA and reports the fatal usage error LICM requires MemorySSA (loop-mssa). loop(loop-rotate) is accepted and runs, so the loop adaptor itself is fine.
+    evidence: cell licm_is_special
+    citation: llvm/lib/Transforms/Scalar/LICM.cpp:303-307@llvmorg-23.1.0, LICMPass::run beginning with if (!AR.MSSA) reportFatalUsageError("LICM requires MemorySSA (loop-mssa)")
+    confidence: cited
