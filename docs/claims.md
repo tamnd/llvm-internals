@@ -6,7 +6,7 @@ Every factual claim every lesson makes, with the evidence for it. Written agains
 
 `observed` means somebody ran it, on two platforms. `cited` means it is in the LLVM source or its documentation at the pinned tag, at the line given. `inferred` means neither, and a lesson is allowed at most three.
 
-82 claims: 48 observed, 33 cited, 1 inferred.
+92 claims: 54 observed, 37 cited, 1 inferred.
 
 ## t01_one_line_of_c
 
@@ -106,6 +106,21 @@ Every factual claim every lesson makes, with the evidence for it. Written agains
 | InstCombinePass::run also returns PreservedAnalyses::all() when it changed nothing, and when it did change something it preserves the CFGAnalyses set, which covers every analysis that depends on nothing but control flow and so keeps the dominator tree alive. EarlyCSE ends the same way. | cited | cell same_pass_two_answers<br>llvm/lib/Transforms/InstCombine/InstructionCombining.cpp:6301-6313@llvmorg-23.1.0 and llvm/lib/Transforms/Scalar/EarlyCSE.cpp:1820-1826@llvmorg-23.1.0, both ending in PA.preserveSet<CFGAnalyses>() |
 | Running simplifycfg on sum_to with -simplifycfg-require-and-preserve-domtree produces the same IR as running it without, and the dominator tree is no longer thrown away. | observed | cell the_flag_that_proves_it<br>measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, identical function bodies and no invalidation line on both |
 | RequireAndPreserveDomTree is a hidden command line flag that is off by default, described in its own declaration as a temporary development switch for gradually uplifting SimplifyCFG into preserving the dominator tree. | cited | cell the_flag_that_proves_it<br>llvm/lib/Transforms/Utils/SimplifyCFG.cpp:101-107@llvmorg-23.1.0, "Temporary development switch used to gradually uplift SimplifyCFG into preserving DomTree," |
+
+## t07_which_one_did_it
+
+| Claim | Confidence | Evidence |
+|---|---|---|
+| A million deep tail recursion compiled at -O0 dies on a signal under lli, and the same source through default<O2> returns the right answer. The signal number is not the same on the two platforms, which is why the lesson prints it. | observed | cell two_answers<br>measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, signal 4 on macOS and signal 11 on Linux, and 1 returned from the optimised build on both |
+| -opt-bisect-limit numbers pass runs rather than pipeline entries, so the count is larger than the number of entries in the printed default<O2> string. For this two function module it is 192 runs against 120 entries on macOS and 191 against 119 on Linux. | observed | cell the_numbering<br>measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0 |
+| -opt-bisect-limit=N is a cap, not only a numbering. It is turned into the interval 1 to N, a limit of 0 means run no passes, and the default of -1 means run all of them. | cited | cells the_numbering and over_the_limit<br>llvm/lib/IR/OptBisect.cpp:31-49@llvmorg-23.1.0, "Convert limit to interval 1-Limit" with the 0 and -1 cases above it |
+| Every pass above the limit prints a line saying it was not run, so the log distinguishes a pass that ran from one that was skipped rather than leaving it out. | cited | cell over_the_limit<br>llvm/lib/IR/OptBisect.cpp:89-94@llvmorg-23.1.0, printPassMessage writes "BISECT: " then "NOT " when the pass is not running, then the number, the name and the thing it was handed |
+| Because the limit admits a prefix of the runs, any yes or no question about the output is monotone in the limit, so a binary search over it finds the exact run that changes the answer. Here eight probes are enough. | observed | cell the_search<br>measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, eight probes on both, converging on run 37 |
+| The run that turns the crash into an answer is number 37, tailcallelim on down, on both platforms, even though the two platforms disagree about the total number of runs. | observed | cell the_search<br>measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, "BISECT: running pass (37) tailcallelim on down" on both |
+| -opt-disable takes pass names and switches them off wherever they appear in the pipeline. Running default<O2> with tailcallelim disabled brings the crash back, and disabling simplifycfg, which appears eight times in the same pipeline, changes nothing. | cited | cell take_it_away<br>llvm/lib/IR/OptBisect.cpp:82-87@llvmorg-23.1.0 for the flag, and measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0 for the three outcomes |
+| tailcallelim run on its own over the -O0 IR, with nothing else from -O2, is enough to make the program return. So the pass is both necessary within -O2 and sufficient without it. | observed | cells take_it_away and the_suspect_alone<br>measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, the same exit code and the same transformed IR on both |
+| The transformation replaces a self recursive call followed by a return with a branch to the entry of the function, which makes a loop. In the output the call is gone, there is a block named tailrecurse, and there is one phi at the top of it per parameter. | cited | cell the_suspect_alone<br>llvm/lib/Transforms/Scalar/TailRecursionElimination.cpp:9-11@llvmorg-23.1.0, "transforms calls of the current function (self recursion) followed by a return instruction with a branch to the entry of the function, creating a loop" |
+| The transformed function still has its allocas and its loads and stores, because mem2reg is not in this pipeline. Running one pass runs one pass. | observed | cell the_suspect_alone<br>measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, two allocas still present in down on both |
 
 ## x03_your_first_fold
 
