@@ -298,7 +298,7 @@ class TestRun(Harness):
         self.write("t04_the_pass_tape", source)
         build.cmd_notebooks(build.argparse.Namespace(only=None))
         code = build.cmd_run(
-            build.argparse.Namespace(only=None, include_e1=False, timeout=120)
+            build.argparse.Namespace(only=None, skip=[], include_e1=False, timeout=120)
         )
         self.assertEqual(code, 0)
         out = build.ROOT / ".build" / "t04_the_pass_tape" / "lesson.ipynb"
@@ -306,6 +306,41 @@ class TestRun(Harness):
         joined = json.dumps(doc)
         self.assertNotIn("must not run", joined)
         self.assertIn("hello", joined)
+
+    def test_a_skipped_lesson_says_so_and_never_reaches_a_kernel(self) -> None:
+        # No skipIf on this one. The whole point of --skip is that the lesson
+        # does not get executed, so this passes on a machine with no jupyter,
+        # and it would fail loudly if --skip ever stopped skipping.
+        self.write("t04_the_pass_tape", LESSON)
+        build.cmd_notebooks(build.argparse.Namespace(only=None))
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = build.cmd_run(
+                build.argparse.Namespace(
+                    only=None, skip=["t04_the_pass_tape"], include_e1=False, timeout=120
+                )
+            )
+        self.assertEqual(code, 0)
+        self.assertIn("skipped, asked for by name", out.getvalue())
+        self.assertFalse((build.ROOT / ".build" / "t04_the_pass_tape").exists())
+
+    def test_only_takes_more_than_one_id(self) -> None:
+        # --only is a list now. If it were still compared with != the lesson
+        # would be filtered out here, and this would run rather than skip.
+        self.write("t04_the_pass_tape", LESSON)
+        build.cmd_notebooks(build.argparse.Namespace(only=None))
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            code = build.cmd_run(
+                build.argparse.Namespace(
+                    only=["t01_hello", "t04_the_pass_tape"],
+                    skip=["t04_the_pass_tape"],
+                    include_e1=False,
+                    timeout=120,
+                )
+            )
+        self.assertEqual(code, 0)
+        self.assertIn("t04_the_pass_tape skipped", out.getvalue())
 
 
 class TestScaffold(Harness):

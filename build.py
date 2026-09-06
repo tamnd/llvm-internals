@@ -532,10 +532,7 @@ def cmd_run(args: argparse.Namespace) -> int:
     Outputs land in .build/ and are thrown away. Nothing executed here ever gets
     committed, because a committed notebook in this repository has no outputs.
     """
-    if shutil.which("jupyter") is None:
-        print("run: needs jupyter, try `uv run --with nbconvert --with ipykernel build.py run`")
-        return 1
-    failures = 0
+    todo = []
     for path in lesson_paths():
         lesson = load_lesson(path)
         if args.only and lesson.id not in args.only:
@@ -546,6 +543,18 @@ def cmd_run(args: argparse.Namespace) -> int:
         if lesson.env == "E1" and not args.include_e1:
             print(f"run: {lesson.id} is E1, skipping, pass --include-e1 to run it anyway")
             continue
+        todo.append(lesson)
+
+    # Asked for last, so that a run which turns out to have nothing to execute
+    # is not a missing dependency. `--skip` is how the CI job leaves out the one
+    # lesson that needs a tool it has not got, and on a machine where that is
+    # every lesson, the honest answer is that there was nothing to do.
+    if todo and shutil.which("jupyter") is None:
+        print("run: needs jupyter, try `uv run --with nbconvert --with ipykernel build.py run`")
+        return 1
+
+    failures = 0
+    for lesson in todo:
         notebook = NOTEBOOKS / lesson.id / "lesson.ipynb"
         outdir = ROOT / ".build" / lesson.id
         outdir.mkdir(parents=True, exist_ok=True)
