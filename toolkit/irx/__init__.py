@@ -23,9 +23,10 @@ and after that:
 from __future__ import annotations
 
 from . import env as _env
+from . import graphs, pipeline, plugin, predict, verify
 from . import magic as _magic
-from . import pipeline, plugin, predict, verify
 from .env import Env, cpu_count, describe, detect
+from .graphs import Edge, Graph, GraphError, Node, callgraph, cfg, ddg, dom, graph
 from .ir import Diff, Module, has_pass, highlight, passes
 from .magic import load_ipython_extension
 from .pipeline import Step, Tape, tape
@@ -41,9 +42,13 @@ __version__ = "0.1.0"
 __all__ = [
     "AliveError",
     "Diff",
+    "Edge",
     "Env",
     "Gate",
+    "Graph",
+    "GraphError",
     "Module",
+    "Node",
     "Plugin",
     "Report",
     "Result",
@@ -55,12 +60,18 @@ __all__ = [
     "Verdict",
     "alive",
     "bootstrap",
+    "callgraph",
+    "cfg",
     "compile_c",
     "cpu_count",
     "current",
+    "ddg",
     "describe",
     "detect",
+    "dom",
     "gate",
+    "graph",
+    "graphs",
     "has_pass",
     "highlight",
     "load_ipython_extension",

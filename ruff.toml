@@ -48,4 +48,7 @@ ignore = ["S603", "S607"]
 # off for the same reason: several fixtures are verbatim `opt` output, one line
 # of which is 111 characters, and a fixture that has been reflowed to fit a
 # column limit is no longer evidence of anything.
-"toolkit/tests/*" = ["S101", "S105", "S108", "E501"]
+# S314 is the XML parser one. What gets parsed here is the SVG this package
+# generated two lines earlier, and the check is that it is well formed, which
+# is exactly the thing a hardened parser would refuse to tell us.
+"toolkit/tests/*" = ["S101", "S105", "S108", "S314", "E501"]

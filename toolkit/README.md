@@ -226,6 +226,31 @@ The wrong options get a real explanation too. A reader who picked the second one
 
 Same rules as the tape: no JavaScript, the reveal is a `<details>`, the highlight on what you picked is a radio button and a sibling selector, and the answer is named in a sentence as well as tinted so a renderer that drops the stylesheet still tells you which one it was. Printing a gate in a terminal shows the question, the options, the answer and every explanation, because there is nowhere in plain text to hide something behind a click and pretending otherwise would make it a puzzle instead of a lesson.
 
+## Looking at the graph
+
+`opt` has printers for the control flow graph, the dominator and post dominator trees, the data dependence graph and the call graph. They are in a release build, and they write Graphviz `.dot` into whatever directory you are standing in. `irx.cfg` runs one, reads what it wrote, and draws it.
+
+```python
+m = irx.Module.from_c("""
+int f(int n) {
+  int s = 0;
+  for (int i = 0; i < n; i++) { if (i & 1) s += i; else s -= i; }
+  return s;
+}
+""", opt="-O1")
+irx.cfg(m)
+```
+
+![The control flow graph of a loop, drawn from opt's own dot output](../docs/images/cfg.svg)
+
+`irx.dom`, `irx.ddg` and `irx.callgraph` are the same thing with a different printer behind them, and `irx.graph(m, "post-dom")` reaches the rest. A module with more than one function is an error naming the functions it has, rather than a picture of whichever one came first.
+
+Nothing here works out what the successors of a block are. That is the whole point: the graph is LLVM's, so when it is surprising the thing to argue with is LLVM. What this module does is parse the `.dot`, throw away the node names, which are pointer addresses and differ between two runs of the same program, and lay the result out.
+
+**The SelectionDAG viewers are not here, and cannot be.** `-view-isel-dags` and its family are declared inside `#ifndef NDEBUG`, and the `#else` branch replaces them with `static const bool ... = false`, so on a release toolchain those flags do not exist at all (`llvm/lib/CodeGen/SelectionDAG/SelectionDAGISel.cpp:147-189@llvmorg-23.1.0`). A reader who installed LLVM from a package manager cannot have them, so no lesson may depend on them. Of the graphs a release `opt` will give you, the data dependence graph is the one that is genuinely a DAG: it collapses each cycle into a pi-block, which is what makes the rest of it acyclic.
+
+**No Graphviz.** `dot` is not installed on every machine this has to run on, so the layout is here instead: rank each node one below its furthest predecessor, break the cycles first with a depth first walk, and route the two awkward cases, back edges and edges that skip a row, around the margin rather than straight through whatever box is in the way. The output is one inline `<svg>` with no script in it, which survives being saved into a notebook and served as static HTML.
+
 ## When a tool fails
 
 The default subprocess failure is `CalledProcessError: returned non-zero exit status 1`, which tells a reader who has never run `opt` before absolutely nothing. `irx` raises `ToolError` instead, with the command, the real stderr, and where possible a sentence about what to do:
