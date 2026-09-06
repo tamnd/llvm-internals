@@ -32,7 +32,10 @@ Homepage = "https://github.com/tamnd/llvm-internals"
 Issues = "https://github.com/tamnd/llvm-internals/issues"
 
 [tool.setuptools]
-packages = ["irx"]
+# Two packages, one distribution. `irxmanim` is the animation library, it
+# imports `irx` for the IR colouring and nothing else, and it ships here rather
+# than separately because a reader installs one thing in the first cell.
+packages = ["irx", "irxmanim"]
 
 [tool.setuptools.package-data]
 irx = ["pin.json"]
