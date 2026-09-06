@@ -3,10 +3,13 @@
 #
 # Everything marked observed was checked on two platforms, macOS arm64 with
 # Homebrew LLVM 23.1.0 and Linux x86_64 running the min bundle's own clang, opt
-# and lli built from llvmorg-23.1.0. The one thing that differs between them is
-# the toolchain's source line, which names where the binaries were found and is
-# a property of the machine rather than of LLVM. Every other line of output in
-# this lesson is identical on both hosts.
+# and lli built from llvmorg-23.1.0. Two lines differ between them. The
+# toolchain's source line names where the binaries were found and is a property
+# of the machine rather than of LLVM. The define line reads `define dso_local
+# i32 @main()` on Linux and `define i32 @main()` on macOS, because dso_local is
+# about ELF symbol interposition and means nothing on Mach-O. No claim below is
+# about either line. Every other line of output in this lesson, including the
+# alloca, the store and the ret, is identical on both hosts.
 claims:
   - id: the-bootstrap-prints-two-facts
     claim: The cell build.py prepends to every lesson prints which LLVM was found and where it came from, and then which environment the notebook is in. Both are available afterwards as irx.current() and irx.describe().

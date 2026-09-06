@@ -1,0 +1,87 @@
+# Every factual claim in this lesson, with the evidence for it.
+# confidence is one of: observed, cited, inferred. At most three may be inferred.
+#
+# Everything marked observed was checked on two platforms, macOS arm64 with
+# Homebrew LLVM 23.1.0 and Linux x86_64 running the min bundle's own clang built
+# from llvmorg-23.1.0. Every instruction printed by this lesson is identical on
+# the two hosts, including both constants, because int is 32 bits on both.
+#
+# The two `define` lines are not identical. Linux prints `define dso_local` and
+# macOS prints `define`, because the flag is about ELF symbol interposition and
+# means nothing on Mach-O. Nothing in this lesson depends on it, and no claim
+# below quotes a define line, but it is the kind of difference that would make a
+# claim of byte identical output false, so it is written down rather than
+# rounded off.
+#
+# This lesson is about the format of this file, so it is worth saying what the
+# file is not. Nothing here is checked by a machine for being true. refcheck
+# checks that the pointers resolve and the words are in the vocabulary, and a
+# confidently wrong claim at a line number that exists passes every check in the
+# repository. What the format buys is that a wrong claim stays findable and
+# keeps its evidence attached to it.
+claims:
+  - id: signed-folds-and-unsigned-does-not
+    claim: At -O2 clang turns x + 1 > x into ret i32 1 when x is an int, with no addition and no comparison left, and does not fold it when x is unsigned, where it keeps a comparison against the largest representable value. The two functions differ only in the type.
+    evidence: cell the_observation
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, ret i32 1 for the signed function and icmp ne i32 %x, -1 for the unsigned one on both
+    confidence: observed
+
+  - id: the-difference-is-there-before-any-pass-runs
+    claim: The signed addition carries nsw and the unsigned one does not, at -O0, with no pass having run. The front end attaches the flag while building the IR, so the difference between the two functions is decided by the language rules rather than by anything in the optimiser.
+    evidence: cell where_it_came_from
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, add nsw i32 in with_signed and add i32 in with_unsigned on both
+    confidence: observed
+
+  - id: nsw-means-poison-on-overflow
+    claim: nsw stands for No Signed Wrap, and an add carrying it produces a poison value when signed overflow occurs. That is what licenses the fold: the optimiser is entitled to assume the overflowing case does not happen.
+    evidence: cell the_rule
+    citation: llvm/docs/LangRef.md:10671-10674@llvmorg-23.1.0, "`nuw` and `nsw` stand for \"No Unsigned Wrap\" and \"No Signed Wrap\", respectively. If the `nuw` and/or `nsw` keywords are present, the result value of the `add` is a poison value if unsigned and/or signed overflow, respectively, occurs."
+    confidence: cited
+
+  - id: removing-the-flag-removes-the-fold
+    claim: Compiling the same source with -fwrapv removes the nsw at -O0, and at -O2 the signed function stops folding and becomes a comparison against the largest int, the same shape the unsigned one had. Nothing in the optimiser changed between the two runs.
+    evidence: cell the_control
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, add i32 in both functions at -O0 and icmp ne i32 %x, 2147483647 at -O2 on both
+    confidence: observed
+
+  - id: an-observation-and-a-citation-answer-different-questions
+    claim: An observation says what happened in one run on one machine and carries no promise about the next release. A citation says what a construct means at a named line of a named version. A book that runs the first and writes it up as though it were the second has a claim with no scope on it.
+    evidence: cells the_observation and the_rule
+    citation: this is the reason the format has three words rather than one, and it is an argument rather than a measurement
+    confidence: inferred
+
+  - id: the-three-words-are-the-vocabulary
+    claim: Every claim carries exactly one of observed, cited and inferred, refcheck rejects any other word, and a lesson may have at most three inferred claims, because a lesson that is mostly inference is an essay.
+    evidence: cell the_ledger_entry
+    citation: tools/refcheck.py, CONFIDENCE and MAX_INFERRED, and the check that reports "N inferred claims, and at most 3 are allowed"
+    confidence: cited
+
+  - id: a-cited-claim-needs-a-pointer-and-the-right-tag
+    claim: A claim marked cited has to carry a citation, and that citation has to be a pointer rather than a sentence. Every llvmorg tag appearing in any citation is compared against docs/pin.json, so a citation left behind by a moved pin is a failure rather than a silent inaccuracy.
+    evidence: cell the_ledger_entry
+    citation: tools/refcheck.py, the checks reporting "a cited claim has to say what it cites", "a cited claim needs a pointer, not a sentence" and "citation is pinned to X, but docs/pin.json says Y"
+    confidence: cited
+
+  - id: an-observed-claim-may-have-no-citation
+    claim: A claim marked observed is allowed to carry no citation at all, because the cell a reader can run is already the evidence. That asymmetry is deliberate and is written into the checker rather than left to judgement.
+    evidence: cell the_ledger_entry
+    citation: tools/refcheck.py, REQUIRED, which is id, claim, evidence and confidence, with the comment that citation is absent on purpose
+    confidence: cited
+
+  - id: the-ledger-is-generated-and-checked-in
+    claim: docs/claims.md is every claim in the book in one table, generated from the claims.yaml files by refcheck --ledger and committed, so it is one file to read and CI fails when it stops matching its source.
+    evidence: cell the_ledger_entry
+    citation: tools/refcheck.py, the ledger function, and tests/test_refcheck.py, test_the_ledger_is_not_stale, which regenerates the ledger and compares it to the committed file
+    confidence: cited
+
+  - id: evidence-fields-name-cells-that-exist
+    claim: The evidence field of a claim names cells by id, and refcheck checks that each named cell is in the lesson, which is what stops a claim quietly outliving the cell it was about when a cell gets renamed.
+    evidence: cell the_ledger_entry
+    citation: tools/refcheck.py, cell_ids and referenced_cells, and the check reporting "evidence names cell X, which the lesson has not"
+    confidence: cited
+
+  - id: a-negative-control-is-worth-more-than-either-half
+    claim: Watching something happen and finding the rule that permits it leaves open that the two are unrelated. Removing the rule and watching the effect stop closes that gap, and costs one more compile.
+    evidence: cell the_control
+    citation: demonstrated by the -fwrapv run in this lesson, and offered as a method rather than as a fact about LLVM
+    confidence: inferred
