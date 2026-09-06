@@ -1,0 +1,92 @@
+# Every factual claim in this lesson, with the evidence for it.
+# confidence is one of: observed, cited, inferred. At most three may be inferred.
+#
+# Everything marked observed was checked on two platforms, macOS arm64 with
+# Homebrew LLVM 23.1.0 and Linux x86_64 running the min bundle's own clang and
+# lli built from llvmorg-23.1.0. Every line of output in this lesson is
+# identical on the two hosts, including the two sizeof numbers, because both
+# are 64 bit and the structures involved contain nothing whose size varies
+# between the two. On a 32 bit host the StringRef line would say 8.
+#
+# The C++ in the runnable cells is not LLVM's C++. It is the smallest thing
+# that has the same shape, written so that it compiles with no LLVM headers and
+# runs under lli with no C++ library linked. Where a claim is about the real
+# thing rather than about the toy, it is cited to the real thing.
+claims:
+  - id: llvm-has-no-exceptions-and-no-rtti
+    claim: LLVM is built without C++ exceptions and without runtime type information, so try, throw, dynamic_cast and typeid do not appear in the tree. The hand rolled replacement for dynamic_cast is the isa, cast and dyn_cast family, and it is opt in per class.
+    evidence: cell cpp_runs_here
+    citation: llvm/docs/CodingStandards.md:576-587@llvmorg-23.1.0, "In an effort to reduce code and executable size, LLVM does not use exceptions or RTTI", and "LLVM does make extensive use of a hand-rolled form of RTTI that use templates like isa<>, cast<>, and dyn_cast<>"
+    confidence: cited
+
+  - id: value-reference-pointer-differ-observably
+    claim: A parameter written as a plain type receives a copy, so writing to it leaves the caller's object unchanged. A parameter written with an ampersand refers to the caller's object, so writing to it changes it. A parameter written with an asterisk is an address, can be null, and a call passing nullptr is legal and runs.
+    evidence: cell pointers_and_references
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, printing "by value 1, by reference 99, by pointer 99" on both, followed by a completed call with a null argument
+    confidence: observed
+
+  - id: const-on-a-parameter-is-enforced
+    claim: Assigning through a const reference parameter is a compile error, not a warning. clang refuses it with "cannot assign to variable 'I' with const-qualified type 'const Instruction &'" and produces no output.
+    evidence: cell const_is_a_promise
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, exit code 1 and the same message on both
+    confidence: observed
+
+  - id: a-template-is-instantiated-per-argument-list
+    claim: A class template is not a class. Writing the angle bracket arguments makes the compiler produce a distinct class for that argument list, and the arguments need not all be types. SmallVector<int, 4> takes a type and a count.
+    evidence: cell templates_are_stencils
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, a template with a type parameter and an unsigned parameter compiling and running identically on both
+    confidence: observed
+
+  - id: small-vector-holds-its-elements-inside-itself
+    claim: The point of SmallVector<T, N> is that space for N elements lives in the object rather than on the heap, so a vector that stays under N never calls malloc. The cost is that the object itself is large. The toy in this lesson shows the shape, four ints and a count in twenty bytes with nothing allocated.
+    evidence: cell templates_are_stencils
+    citation: llvm/docs/ProgrammersManual.md:1520-1534@llvmorg-23.1.0, "The main advantage of SmallVector is that it allocates space for some number of elements (N) in the object itself. Because of this, if the SmallVector is dynamically smaller than N, no malloc is performed", and "this makes the size of the SmallVector itself large"
+    confidence: cited
+
+  - id: range-for-needs-only-begin-and-end
+    claim: A range based for loop works on anything that provides begin() and end(), which is why LLVM can write for (Instruction &I : instructions(F)) when there is no container called instructions(F) anywhere. Declaring the loop variable with an ampersand binds it to the element rather than to a copy.
+    evidence: cell templates_are_stencils
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, a hand written type with only begin and end iterating correctly on both
+    confidence: observed
+
+  - id: the-cast-family-differs-by-what-happens-when-wrong
+    claim: isa<T>(V) returns a bool. cast<T>(V) asserts that the type is right and converts. dyn_cast<T>(V) checks and returns a null pointer if the operand is not of that type, which is why it is written inside an if. The combined form replaces a call to isa followed by a call to cast.
+    evidence: cell the_cast_family
+    citation: llvm/docs/ProgrammersManual.md:126-148@llvmorg-23.1.0, "The dyn_cast<> operator is a checking cast operation... If the operand is not of the correct type, a null pointer is returned", with the worked if (auto *AI = dyn_cast<AllocationInst>(Val)) and "This form of the if statement effectively combines together a call to isa<> and a call to cast<> into one statement"
+    confidence: cited
+
+  - id: classof-is-how-a-class-recognises-itself
+    claim: The family is built on a static classof written by each class in the hierarchy, which usually tests a kind tag stored in the base object. That is an integer comparison rather than anything the C++ runtime provides, which is how the tests stay cheap in a build with RTTI switched off.
+    evidence: cell the_cast_family
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, a twenty line reimplementation of isa, cast and dyn_cast over a kind tag producing the same three results on both. llvm/docs/CodingStandards.md:584-587@llvmorg-23.1.0 for the real form being opt in and addable to any class.
+    confidence: observed
+
+  - id: dyn-cast-asserts-its-argument-is-there
+    claim: dyn_cast handles a wrong type and does not handle a null operand. Passing null is an assertion failure in an assertions build and undefined behaviour otherwise. The variants that accept null and propagate it are the ones ending in _if_present.
+    evidence: cell gate_dyn_cast
+    citation: llvm/include/llvm/Support/Casting.h:644-662@llvmorg-23.1.0, every dyn_cast overload beginning with assert(detail::isPresent(Val) && "dyn_cast on a non-existent value"), and llvm/docs/ProgrammersManual.md:166-171@llvmorg-23.1.0 for dyn_cast_if_present, documented as the same operator "except that it allows for a null pointer as an argument (which it then propagates)"
+    confidence: cited
+
+  - id: a-view-copies-nothing
+    claim: A pointer and length pair can be narrowed without copying any characters, so a suffix of a string points into the same buffer at an offset, and the object is a fixed size whatever it points at. The toy prints a tail whose data pointer is the original buffer plus five, and sixteen bytes for the view itself on a 64 bit host.
+    evidence: cell the_view_does_not_own
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, the same pointer identity and the same sixteen bytes on both
+    confidence: observed
+
+  - id: a-stringref-is-not-safe-to-store
+    claim: The real StringRef does not own its characters and is only valid while whatever holds them is. The header says so, and says that for this reason it is not in general safe to store one.
+    evidence: cell the_view_does_not_own
+    citation: llvm/include/llvm/ADT/StringRef.h:49-56@llvmorg-23.1.0, "This class does not own the string data, it is expected to be used in situations where the character data resides in some other buffer, whose lifetime extends past that of the StringRef. For this reason, it is not in general safe to store a StringRef."
+    confidence: cited
+
+  - id: the-target-text-is-a-real-pass
+    claim: Both quoted functions are the whole of what dead code elimination does, taken unedited from the pinned tree apart from the two comments removed from the first quote for space. Between them they use every construct in this lesson and nothing else, aside from a debug counter.
+    evidence: cells gate_skip and the_view_does_not_own
+    citation: llvm/lib/Transforms/Scalar/DCE.cpp:89-108@llvmorg-23.1.0 for eliminateDeadCode and llvm/lib/Transforms/Scalar/DCE.cpp:55-87@llvmorg-23.1.0 for DCEInstruction
+    confidence: cited
+
+  - id: early-inc-range-is-why-the-loop-can-delete
+    claim: The loop in eliminateDeadCode walks instructions while erasing them, which it can do because make_early_inc_range advances the iterator before the body runs, so the element the body destroys is no longer the one the loop is holding.
+    evidence: cell gate_skip
+    citation: llvm/include/llvm/ADT/STLExtras.h:625-636@llvmorg-23.1.0, make_early_inc_range, documented as being for the case where "the current iterator can be invalidated" and requiring a pattern that dereferences and increments each element exactly once
+    confidence: cited
