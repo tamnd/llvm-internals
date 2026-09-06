@@ -117,8 +117,15 @@ def run(
     stdin: str | None = None,
     check: bool = True,
     timeout: int = DEFAULT_TIMEOUT,
+    cwd: str | Path | None = None,
 ) -> Result:
-    """Run one LLVM tool. `tool` is a bare name like `opt`, resolved against the pin."""
+    """Run one LLVM tool. `tool` is a bare name like `opt`, resolved against the pin.
+
+    `cwd` is for the handful of things LLVM writes to the working directory
+    rather than to stdout. The graph printers are the ones this repository
+    needs: `opt -passes=dot-cfg` writes `.f.dot` next to wherever you are
+    standing, and there is no flag that redirects it.
+    """
     argv = [str(toolchain.path_to(tool)), *(str(a) for a in args)]
     start = time.monotonic()
     try:
@@ -128,6 +135,7 @@ def run(
             capture_output=True,
             text=True,
             timeout=timeout,
+            cwd=None if cwd is None else str(cwd),
         )
     except subprocess.TimeoutExpired:
         elapsed = time.monotonic() - start
