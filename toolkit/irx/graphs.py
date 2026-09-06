@@ -37,7 +37,7 @@ import tempfile
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from .ir import COLOUR, KEYWORDS, TOKEN, Module
+from .ir import COLOUR, Module, pieces
 from .proc import run
 
 # The pass name, and the shape of the file it leaves behind. `opt` prints
@@ -445,22 +445,8 @@ def _boxes(nodes: list[Node], rank: dict[str, int]) -> list[Box]:
 
 def _tspans(line: str, x: float, y: float) -> str:
     """One line of IR as coloured SVG, using the same palette as the diff view."""
-    pieces = []
-    position = 0
-    for match in TOKEN.finditer(line):
-        pieces.append((line[position : match.start()], ""))
-        kind = match.lastgroup or ""
-        value = match.group()
-        if kind == "word":
-            kind = "keyword" if value in KEYWORDS else ""
-        pieces.append((value, COLOUR.get(kind, "")))
-        position = match.end()
-    pieces.append((line[position:], ""))
-
     spans = []
-    for text, colour in pieces:
-        if not text:
-            continue
+    for text, colour in pieces(line):
         fill = f' fill="{colour}"' if colour else ""
         weight = ' font-weight="600"' if colour == COLOUR["keyword"] else ""
         spans.append(f'<tspan{fill}{weight}>{html.escape(text)}</tspan>')

@@ -251,6 +251,42 @@ Nothing here works out what the successors of a block are. That is the whole poi
 
 **No Graphviz.** `dot` is not installed on every machine this has to run on, so the layout is here instead: rank each node one below its furthest predecessor, break the cycles first with a depth first walk, and route the two awkward cases, back edges and edges that skip a row, around the margin rather than straight through whatever box is in the way. The output is one inline `<svg>` with no script in it, which survives being saved into a notebook and served as static HTML.
 
+## Making it move
+
+`irxmanim` is the second package in this directory. It borrows manim's vocabulary, mobjects and a scene and `play` for one beat of it, and none of its implementation: manim renders video, which wants cairo, ffmpeg and usually a LaTeX install, and none of that fits in the first cell of a Colab notebook or survives being saved into one.
+
+```python
+from irxmanim import Scene, Box, Code, Caption, fade_in, fade_out, highlight, move
+
+s = Scene(430, 208, caption="opt -passes=dce deletes the instruction nothing reads")
+code = s.add(Code(x=36, y=58, lines=before))
+s.play(fade_in(code))
+s.play(highlight(code[2]))
+s.play(fade_out(code[2]))
+s.play(move(code[3], dy=-17), move(code[4], dy=-17))
+```
+
+![A pass deleting the one instruction nothing reads, and the lines below it closing up](../docs/diagrams/pass-step.svg)
+
+The mobjects are `Box`, `Code`, which is a group with one mobject per line so a pass can be shown touching one instruction and leaving the rest alone, `Caption`, `Arrow` and `link` for an arrow between two things, and `Group`. The animations are `fade_in`, `fade_out`, `move`, `highlight`, `pulse` and `draw`, which strokes an arrow from its tail to its head.
+
+Print a scene and you get the storyboard, which is the form a review reads:
+
+```
+Scene 430x208, 4.6s, looping, 16 mobjects
+
+    0.0s  fade in    opt -passes=dce
+    1.0s  highlight  %b = mul nsw i32 %x, 7
+    2.0s  fade out   %b = mul nsw i32 %x, 7
+    2.4s  move       ret i32 %a
+```
+
+**CSS keyframes, no script.** This ends up in a saved notebook, in Colab's output sandbox and in static HTML on the site, and script survives none of those reliably. It also means the picture animates when it is loaded as an ordinary `<img>`, which script would not.
+
+**The markup is the last frame.** Every element is written out where it ends up, and the animation walks back to the start and forward again. A renderer that drops the stylesheet, a printed page and anybody whose system asks for less motion all get the finished picture rather than an empty box. `scene.frame(t)` gives any other moment as a still, with nothing moving in it.
+
+**Ninety seconds is the cap**, the one in `CONTRIBUTING.md`, and a scene that goes over it raises rather than rendering. A longer animation is two animations.
+
 ## When a tool fails
 
 The default subprocess failure is `CalledProcessError: returned non-zero exit status 1`, which tells a reader who has never run `opt` before absolutely nothing. `irx` raises `ToolError` instead, with the command, the real stderr, and where possible a sentence about what to do:

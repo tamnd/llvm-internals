@@ -68,23 +68,36 @@ TOKEN = re.compile(
 )
 
 
-def highlight(text: str) -> str:
-    """LLVM IR to coloured HTML. Small on purpose, see the module docstring."""
-    out: list[str] = []
+def pieces(text: str) -> list[tuple[str, str]]:
+    """Split IR into (text, colour) pairs, colour empty for anything uncoloured.
+
+    Three things render IR now: this module into HTML, the graph viewer into
+    SVG text, and the animation library into SVG text that moves. They agree
+    about what a keyword is because they all come through here.
+    """
+    out: list[tuple[str, str]] = []
     position = 0
     for match in TOKEN.finditer(text):
-        out.append(html.escape(text[position : match.start()]))
+        out.append((text[position : match.start()], ""))
         kind = match.lastgroup or ""
         value = match.group()
         if kind == "word":
             kind = "keyword" if value in KEYWORDS else ""
-        if kind and kind in COLOUR:
-            weight = ";font-weight:600" if kind == "keyword" else ""
-            out.append(f'<span style="color:{COLOUR[kind]}{weight}">{html.escape(value)}</span>')
-        else:
-            out.append(html.escape(value))
+        out.append((value, COLOUR.get(kind, "")))
         position = match.end()
-    out.append(html.escape(text[position:]))
+    out.append((text[position:], ""))
+    return [(chunk, colour) for chunk, colour in out if chunk]
+
+
+def highlight(text: str) -> str:
+    """LLVM IR to coloured HTML. Small on purpose, see the module docstring."""
+    out: list[str] = []
+    for chunk, colour in pieces(text):
+        if colour:
+            weight = ";font-weight:600" if colour == COLOUR["keyword"] else ""
+            out.append(f'<span style="color:{colour}{weight}">{html.escape(chunk)}</span>')
+        else:
+            out.append(html.escape(chunk))
     return "".join(out)
 
 
