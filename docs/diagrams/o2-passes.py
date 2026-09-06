@@ -20,7 +20,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from tools.excalidraw import FONT_CODE, FONT_SANS, Scene  # noqa: E402
+from tools.excalidraw import FONT_CODE, FONT_SANS, Scene
 
 HERE = Path(__file__).resolve().parent
 OUT = HERE / "o2-passes"
@@ -139,7 +139,8 @@ def draw(data: dict) -> None:
     s.label("axis-b", LEFT + width, TOP + TICK_H + 8, "last pass", size=12, align="right")
 
     legend_top = TOP + TICK_H + 62
-    s.label("legend-h", LEFT, legend_top - 24, "the ones that did something", size=13, font=FONT_SANS)
+    s.label("legend-h", LEFT, legend_top - 24, "the ones that did something",
+            size=13, font=FONT_SANS)
     for row, entry in enumerate(loop["changed"]):
         delta = entry["delta"]
         if delta is None:
@@ -164,7 +165,8 @@ def draw(data: dict) -> None:
         LEFT,
         tail,
         "The orange one is the pass that removed the loop, and it is the only one with nothing to\n"
-        "show you. opt prints the IR after a pass by asking the loop it just ran on to print itself,\n"
+        "show you. opt prints the IR after a pass by asking the loop it just ran on to "
+        "print itself,\n"
         "and by then there was no loop. It writes one line instead and no IR at all.",
         size=13,
         font=FONT_SANS,
@@ -184,7 +186,8 @@ def draw(data: dict) -> None:
         LEFT,
         tail + 132,
         "The grey ticks are not wasted work either. Most of them are a pass looking for a pattern\n"
-        "that is not in this function, and the same pipeline has to be right for five lines and for\n"
+        "that is not in this function, and the same pipeline has to be right for five "
+        "lines and for\n"
         f"five thousand. Take the loop out and it drops to {data['plain']['total']} passes with "
         f"{data['plain']['changed']} changes.",
         size=13,

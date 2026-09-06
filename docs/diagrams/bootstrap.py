@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from tools.excalidraw import FONT_SANS, Scene  # noqa: E402
+from tools.excalidraw import FONT_SANS, Scene
 
 OUT = Path(__file__).resolve().parent / "bootstrap"
 
@@ -14,11 +14,16 @@ OUT = Path(__file__).resolve().parent / "bootstrap"
 # where it does. The order is the whole design, so it is the whole diagram.
 SOURCES = [
     ("env", "IRX_LLVM_BIN", "you pointed at one yourself, so nothing else gets a vote", "source"),
-    ("cache", "~/.cache/irx/<tag>/bin", "already unpacked from an earlier cell, so this is free", "output"),
-    ("tree", "your llvm-project build tree", "E1 only, and it is the one you just built", "source"),
-    ("system", "the LLVM already on PATH", "convenient, and quite often the wrong version", "external"),
-    ("tarball", "the pinned tarball we publish", "the Colab path: one download, unpacked in seconds", "tool"),
-    ("apt", "apt.llvm.org", "minutes rather than seconds, and only until the tarball exists", "warn"),
+    ("cache", "~/.cache/irx/<tag>/bin",
+     "already unpacked from an earlier cell, so this is free", "output"),
+    ("tree", "your llvm-project build tree",
+     "E1 only, and it is the one you just built", "source"),
+    ("system", "the LLVM already on PATH",
+     "convenient, and quite often the wrong version", "external"),
+    ("tarball", "the pinned tarball we publish",
+     "the Colab path: one download, unpacked in seconds", "tool"),
+    ("apt", "apt.llvm.org",
+     "minutes rather than seconds, and only until the tarball exists", "warn"),
 ]
 
 TOP = 90
@@ -109,8 +114,10 @@ def main() -> None:
         "why-stop",
         560,
         820,
-        "The split matters. A Colab box with somebody else's LLVM on PATH should go and fetch the right one,\n"
-        "not refuse to start. A person who set IRX_LLVM_BIN by hand should hear about it, not be ignored.",
+        "The split matters. A Colab box with somebody else's LLVM on PATH should go "
+        "and fetch the right one,\n"
+        "not refuse to start. A person who set IRX_LLVM_BIN by hand should hear about "
+        "it, not be ignored.",
         size=13,
     )
 

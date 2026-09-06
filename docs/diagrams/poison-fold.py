@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from tools.excalidraw import FONT_CODE, FONT_SANS, Scene  # noqa: E402
+from tools.excalidraw import FONT_CODE, FONT_SANS, Scene
 
 OUT = Path(__file__).resolve().parent / "poison-fold"
 
@@ -56,7 +56,7 @@ def main() -> None:
         LEFT,
         "src",
         "what you wrote",
-        shared + [("%r = select i1 %ok, i1 %big, i1 false\nfalse", "output")],
+        [*shared, ("%r = select i1 %ok, i1 %big, i1 false\nfalse", "output")],
         "output",
     )
     column(
@@ -64,7 +64,7 @@ def main() -> None:
         RIGHT,
         "tgt",
         "what your fold produced",
-        shared + [("%r = and i1 %ok, %big\npoison", "warn")],
+        [*shared, ("%r = and i1 %ok, %big\npoison", "warn")],
         "warn",
     )
 
@@ -72,7 +72,8 @@ def main() -> None:
         "src-note",
         60,
         424,
-        "select only reads the arm the condition picked.\nThe condition is false, so the poison arm is never read.",
+        "select only reads the arm the condition picked.\n"
+        "The condition is false, so the poison arm is never read.",
         font=FONT_SANS,
         size=13,
     )
@@ -119,8 +120,10 @@ def main() -> None:
         "rule",
         60,
         616,
-        "A rewrite is allowed to take a poison result and make it defined. It is never allowed to go the other way.\n"
-        "That is the whole rule, and it is why LLVM's own InstCombine refuses this fold unless it can prove the\n"
+        "A rewrite is allowed to take a poison result and make it defined. It is never "
+        "allowed to go the other way.\n"
+        "That is the whole rule, and it is why LLVM's own InstCombine refuses this fold "
+        "unless it can prove the\n"
         "arm it is about to read was never going to be poison.",
         font=FONT_SANS,
         size=13,

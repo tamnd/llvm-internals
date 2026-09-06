@@ -538,7 +538,10 @@ def cmd_run(args: argparse.Namespace) -> int:
     failures = 0
     for path in lesson_paths():
         lesson = load_lesson(path)
-        if args.only and lesson.id != args.only:
+        if args.only and lesson.id not in args.only:
+            continue
+        if lesson.id in args.skip:
+            print(f"run: {lesson.id} skipped, asked for by name")
             continue
         if lesson.env == "E1" and not args.include_e1:
             print(f"run: {lesson.id} is E1, skipping, pass --include-e1 to run it anyway")
@@ -629,7 +632,12 @@ def main(argv: list[str] | None = None) -> int:
     p.set_defaults(func=cmd_new)
 
     p = subs.add_parser("run", help="execute notebooks from a cold kernel")
-    p.add_argument("--only", help="one lesson id")
+    p.add_argument("--only", action="append", metavar="ID",
+                   help="a lesson id, repeatable")
+    # For the lesson that needs a tool this machine has not got. Naming it out
+    # loud beats a job that quietly runs fifteen of sixteen lessons.
+    p.add_argument("--skip", action="append", default=[], metavar="ID",
+                   help="a lesson id to leave out, repeatable")
     p.add_argument("--include-e1", action="store_true", help="also run lessons marked E1")
     p.add_argument("--timeout", type=int, default=600, help="seconds per cell")
     p.set_defaults(func=cmd_run)

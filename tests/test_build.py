@@ -16,7 +16,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-import build  # noqa: E402
+import build
 
 LESSON = """# ---
 # id: t04_the_pass_tape
@@ -109,7 +109,8 @@ class TestParsing(Harness):
             build.load_lesson(path)
 
     def test_first_cell_must_be_markdown(self) -> None:
-        broken = LESSON.replace("# %% [markdown]\n# # The pass tape", "# %%\nx = 1\n\n# %% [markdown]\n# # T", 1)
+        broken = LESSON.replace("# %% [markdown]\n# # The pass tape",
+                                "# %%\nx = 1\n\n# %% [markdown]\n# # T", 1)
         path = self.write("t04_the_pass_tape", broken)
         with self.assertRaisesRegex(build.LessonError, "first cell must be markdown"):
             build.load_lesson(path)

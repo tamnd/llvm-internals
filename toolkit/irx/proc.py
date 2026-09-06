@@ -26,7 +26,7 @@ DEFAULT_TIMEOUT = 120
 class ToolError(RuntimeError):
     """An LLVM tool exited non zero, with the detail a reader needs to act."""
 
-    def __init__(self, result: "Result") -> None:
+    def __init__(self, result: Result) -> None:
         self.result = result
         lines = [
             f"{result.tool} exited {result.code}",

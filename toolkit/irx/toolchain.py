@@ -19,6 +19,7 @@ import platform
 import shutil
 import subprocess
 import tarfile
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -83,7 +84,8 @@ def _version_of(bindir: Path) -> str | None:
         if not exe.exists():
             return None
         try:
-            out = subprocess.run([str(exe), "--version"], capture_output=True, text=True, timeout=30)
+            out = subprocess.run([str(exe), "--version"], capture_output=True, text=True,
+                                 timeout=30)
         except (OSError, subprocess.SubprocessError):
             return None
         for line in out.stdout.split("\n"):
@@ -211,10 +213,10 @@ def _unpack(archive: Path, target: Path) -> None:
         pass
 
     if shutil.which("zstd"):
-        with subprocess.Popen(["zstd", "-dc", str(archive)],
-                              stdout=subprocess.PIPE) as proc:
-            with tarfile.open(fileobj=proc.stdout, mode="r|") as tar:
-                tar.extractall(target, members=_strip1(tar), filter="data")
+        with (subprocess.Popen(["zstd", "-dc", str(archive)],
+                              stdout=subprocess.PIPE) as proc,
+              tarfile.open(fileobj=proc.stdout, mode="r|") as tar):
+            tar.extractall(target, members=_strip1(tar), filter="data")
         if proc.returncode not in (0, None):
             raise RuntimeError(f"zstd failed to decompress {archive.name}")
         return
@@ -240,9 +242,13 @@ def _from_apt(verbose: bool) -> tuple[Path, str] | None:
     if verbose:
         print(f"irx: no tarball yet, installing LLVM {MAJOR} from apt.llvm.org. This is slow.")
     sudo = [] if os.geteuid() == 0 else ["sudo"]
-    script = Path("/tmp/llvm.sh")
+    # A private directory rather than a fixed name in the shared one. This
+    # downloads a script and then runs it as root, and a predictable path in a
+    # world writable directory is something another user on the box can get
+    # there first with.
+    script = Path(tempfile.mkdtemp(prefix="irx-apt-")) / "llvm.sh"
     try:
-        with urllib.request.urlopen("https://apt.llvm.org/llvm.sh", timeout=60) as response:  # noqa: S310
+        with urllib.request.urlopen("https://apt.llvm.org/llvm.sh", timeout=60) as response:
             script.write_bytes(response.read())
         script.chmod(0o755)
         subprocess.run([*sudo, "bash", str(script), MAJOR], check=True)

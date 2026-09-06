@@ -115,7 +115,8 @@ class TestHighlight(unittest.TestCase):
 
     def test_colours_the_things_a_reader_scans_for(self):
         out = ir.highlight("define i32 @f(i32 %x) {\n  ret i32 %x\n}")
-        for colour in (ir.COLOUR["keyword"], ir.COLOUR["type"], ir.COLOUR["global"], ir.COLOUR["local"]):
+        for colour in (ir.COLOUR["keyword"], ir.COLOUR["type"], ir.COLOUR["global"],
+                       ir.COLOUR["local"]):
             self.assertIn(colour, out)
 
     def test_keeps_every_character(self):
@@ -401,7 +402,7 @@ class TestMagicLine(unittest.TestCase):
 
     def test_force_is_taken_out_of_the_flags(self):
         magic.irxplug("count --force", "// source")
-        name, _, extra, force = self.calls[0]
+        _name, _, extra, force = self.calls[0]
         self.assertTrue(force)
         self.assertEqual(extra, ())
 
@@ -524,7 +525,7 @@ class TestTapeText(unittest.TestCase):
 
     def test_a_long_loop_scope_is_cut_so_the_columns_hold(self):
         self.t.steps[1].scope = "loop %for.body in function g"
-        line = [l for l in str(self.t).split("\n") if "SROA" in l][0]
+        line = next(ln for ln in str(self.t).split("\n") if "SROA" in ln)
         self.assertIn("...", line)
         self.assertLess(len(line), 90)
 
@@ -631,7 +632,7 @@ class TestAPassThatDeletedItsLoop(unittest.TestCase):
         self.assertEqual(self.t.step("LoopDeletion").where, "[gone]")
 
     def test_the_text_form_says_what_happened_instead_of_a_line_count(self):
-        line = [l for l in str(self.t).split("\n") if "LoopDeletion" in l][0]
+        line = next(ln for ln in str(self.t).split("\n") if "LoopDeletion" in ln)
         self.assertIn("deleted it, no dump", line)
 
     def test_the_frames_after_it_are_still_the_right_ones(self):
@@ -738,7 +739,8 @@ class TestHints(unittest.TestCase):
 
 class TestToolError(unittest.TestCase):
     def test_message_carries_the_command_and_the_stderr(self):
-        result = proc.Result("opt", ["opt", "-passes=nope", "-"], 1, "", "unknown pass name 'nope'", 0.1)
+        result = proc.Result("opt", ["opt", "-passes=nope", "-"], 1, "",
+                             "unknown pass name 'nope'", 0.1)
         message = str(proc.ToolError(result))
         self.assertIn("opt exited 1", message)
         self.assertIn("-passes=nope", message)

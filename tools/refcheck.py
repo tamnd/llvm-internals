@@ -306,7 +306,7 @@ def ledger(everything: list[tuple[str, list[dict[str, str]]]], tag: str) -> str:
     a reader or a reviewer wants to open is a file at a URL, and the thing that
     keeps it honest is CI failing when it does not match its source.
     """
-    counts = {level: 0 for level in CONFIDENCE}
+    counts = dict.fromkeys(CONFIDENCE, 0)
     for _, claims in everything:
         for claim in claims:
             if claim.get("confidence") in counts:

@@ -122,11 +122,11 @@ class Module:
     # -- getting one ---------------------------------------------------------
 
     @classmethod
-    def from_ll(cls, text: str, name: str = "module") -> "Module":
+    def from_ll(cls, text: str, name: str = "module") -> Module:
         return cls(text=text.strip() + "\n", name=name)
 
     @classmethod
-    def from_file(cls, path: str | Path) -> "Module":
+    def from_file(cls, path: str | Path) -> Module:
         path = Path(path)
         return cls.from_ll(path.read_text(encoding="utf-8"), name=path.stem)
 
@@ -139,7 +139,7 @@ class Module:
         target: str | None = None,
         extra: tuple[str, ...] = (),
         name: str = "from_c",
-    ) -> "Module":
+    ) -> Module:
         """Compile C to IR with the pinned clang.
 
         `-O0` by default because the first thing most lessons want to show is
@@ -168,7 +168,7 @@ class Module:
         target: str | None = None,
         extra: tuple[str, ...] = (),
         name: str = "from_cpp",
-    ) -> "Module":
+    ) -> Module:
         args = [
             "-x", "c++", f"-std={std}", opt, "-S", "-emit-llvm",
             "-Xclang", "-disable-O0-optnone",
@@ -260,7 +260,7 @@ class Module:
 
     # -- doing something to it -----------------------------------------------
 
-    def verify(self) -> "Module":
+    def verify(self) -> Module:
         """Ask LLVM whether this IR is well formed. Raises with the real message if not."""
         run("opt", "-passes=verify", "-disable-output", "-", stdin=self.text)
         return self
@@ -274,7 +274,7 @@ class Module:
 
     def opt(
         self, passes: str, *extra: str, name: str | None = None, quiet: bool = False
-    ) -> "Module":
+    ) -> Module:
         """Run a pass pipeline and hand back the result as a new Module.
 
         The original is untouched, so `before` and `after` can both be on screen
@@ -307,7 +307,7 @@ class Module:
             args = [f"-mtriple={target}", *args]
         return run("llc", *args, *extra, stdin=self.text).stdout
 
-    def link(self, *others: "Module", name: str | None = None) -> "Module":
+    def link(self, *others: Module, name: str | None = None) -> Module:
         """Join modules the way a real link does, with llvm-link.
 
         Files rather than stdin, because llvm-link takes several inputs and
@@ -342,7 +342,7 @@ class Module:
 
     # -- comparing two of them -----------------------------------------------
 
-    def diff(self, other: "Module", context: int = 3) -> "Diff":
+    def diff(self, other: Module, context: int = 3) -> Diff:
         """What changed between two modules. Render it in a cell to see it in colour."""
         return Diff(self, other, context=context)
 
