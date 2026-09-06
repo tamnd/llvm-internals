@@ -1,0 +1,82 @@
+# Every factual claim in this lesson, with the evidence for it.
+# confidence is one of: observed, cited, inferred. At most three may be inferred.
+#
+# Everything marked observed was checked on two platforms, macOS arm64 with
+# Homebrew LLVM 23.1.0 and Linux x86_64 running the min bundle's own opt and
+# FileCheck built from llvmorg-23.1.0. Every line of output in this lesson is
+# identical on the two hosts. This is the one lesson whose cells reach the
+# network, and the fetched text is a property of the tag rather than of either
+# machine, so the two hosts agree by construction as long as the tag is a tag
+# and not a branch, which is the point being made.
+claims:
+  - id: a-citation-has-four-parts
+    claim: A citation in this book is a path from the root of llvm-project, a first line, an optional last line and a tag, and the tag is the part that keeps the line numbers meaning what they meant when they were written. tools/refcheck.py rejects any citation whose tag disagrees with the pin.
+    evidence: cell the_citation
+    citation: docs/pin.json, citation_suffix @llvmorg-23.1.0, and tools/refcheck.py, which reads the pin and reports every citation carrying a different tag
+    confidence: cited
+
+  - id: the-raw-url-is-three-strings-joined
+    claim: The path and the tag are enough to build both URLs. raw.githubusercontent.com plus the tag plus the path gives the file's text, and github.com/llvm/llvm-project/blob plus the tag plus the path plus an L anchor gives the same lines in a browser.
+    evidence: cell the_citation
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, the raw URL for llvm/lib/Transforms/Scalar/DCE.cpp at llvmorg-23.1.0 returning the file on both
+    confidence: observed
+
+  - id: the-fetched-lines-are-the-cited-lines
+    claim: Fetching lines 109 to 116 of llvm/lib/Transforms/Scalar/DCE.cpp at the pinned tag gives DCEPass::run, which takes a Function and a FunctionAnalysisManager, calls eliminateDeadCode, and returns PreservedAnalyses::all() when nothing changed and a set preserving the control flow graph when something did.
+    evidence: cell go_and_look
+    citation: llvm/lib/Transforms/Scalar/DCE.cpp:109-116@llvmorg-23.1.0, fetched and printed by the cell on both hosts
+    confidence: observed
+
+  - id: the-notebook-knows-its-own-tag
+    claim: The lesson does not hardcode the tag in the URL. irx.toolchain.TAG is the tag the toolkit fetched the binaries for, so the notebook fetches source from the same release it is running, and a lesson cannot silently read one version while executing another.
+    evidence: cell go_and_look
+    citation: toolkit/irx/toolchain.py, TAG, and docs/pin.json, which the toolkit and the citation checker both read
+    confidence: cited
+
+  - id: lib-implements-and-include-declares
+    claim: llvm/lib holds most of the source, split by job, with Transforms for IR to IR passes and Target for one directory per backend. llvm/include/llvm holds the public headers exported from those libraries, and llvm/test holds the regression tests.
+    evidence: cell where_part_one_came_from
+    citation: llvm/docs/GettingStarted.md:734-738@llvmorg-23.1.0 for include as "Public header files exported from the LLVM library", :756-759 for lib as "Most source files are here", :779-788 for Transforms as "IR-to-IR program transformations" and Target as "Files describing target architectures for code generation", and :823-826 for test as "Feature and regression tests"
+    confidence: cited
+
+  - id: part-one-came-from-seven-directories
+    claim: The twelve files Part I cites fall into seven directories, and the shape of the list is the shape of the material. Five of them are the pass manager and the pipeline, in llvm/lib/Passes and llvm/include/llvm/Passes; three are target specific, in two backend directories; and not one of them is in llvm/test.
+    evidence: cell where_part_one_came_from
+    citation: the claims.yaml files of lessons t01 through t12, grouped by directory
+    confidence: observed
+
+  - id: a-run-line-is-a-comment-and-an-instruction
+    claim: A lit test carries its own command. Lines beginning with RUN: are comments to the IR parser and the script to lit, and a test file with no RUN line is an error rather than a test that passes by having nothing to do.
+    evidence: cell the_test_is_the_documentation
+    citation: llvm/docs/TestingGuide.md:213-220@llvmorg-23.1.0, "Each test file must contain lines starting with \"RUN:\" that tell lit how to run it. If there are no RUN lines, lit will issue an error while running a test", and "RUN lines are specified in the comments of the test program"
+    confidence: cited
+
+  - id: percent-s-is-the-test-file
+    claim: In a RUN line %s is replaced by the path of the test file itself, which is what makes one file able to be both the input and the assertion.
+    evidence: cell the_test_is_the_documentation
+    citation: llvm/docs/TestingGuide.md:713-718@llvmorg-23.1.0, "%s" documented as "File path to the test case's source. This is suitable for passing on the command line as the input to an LLVM tool"
+    confidence: cited
+
+  - id: the-redirect-is-there-for-a-reason
+    claim: The RUN line pipes the file into opt rather than naming it as an argument because opt prints a ModuleID line naming its input file and does not when the input comes from standard input, which would otherwise put an absolute path into the output being checked.
+    evidence: cell the_test_is_the_documentation
+    citation: llvm/docs/TestingGuide.md:555-557@llvmorg-23.1.0, "To make your tests robust, always use opt ... < %s in the RUN line. opt does not output a ModuleID when input comes from stdin"
+    confidence: cited
+
+  - id: the-sideeffect-call-must-survive
+    claim: llvm/test/Transforms/DCE/int_sideeffect.ll is twelve lines and exists to pin down one behaviour, that a call to llvm.sideeffect is not removed even though it has no arguments, no result and no reader. The comment in the test says so in five words.
+    evidence: cell the_test_is_the_documentation
+    citation: llvm/test/Transforms/DCE/int_sideeffect.ll@llvmorg-23.1.0, fetched and printed by the cell, containing "; Don't DCE llvm.sideeffect calls." above a function whose only instruction is that call
+    confidence: observed
+
+  - id: the-test-passes-when-run-by-hand
+    claim: Running that RUN line with the pinned opt and FileCheck, outside any build tree and without lit, reproduces the test. FileCheck exits 0 when the IR contains everything the CHECK lines ask for.
+    evidence: cell the_test_is_the_documentation
+    citation: measured on macOS arm64 LLVM 23.1.0 and Linux x86_64 LLVM 23.1.0, exit code 0 on both
+    confidence: observed
+
+  - id: and-fails-when-the-thing-it-checks-is-gone
+    claim: Deleting the one call from the IR and running the same check gives exit code 1 and a message naming the CHECK line that could not be found and the line of the test file it is on. An assertion that cannot fail is worth nothing, and this is how to find out whether one can.
+    evidence: cell the_test_is_the_documentation
+    citation: llvm/docs/CommandGuide/FileCheck.rst:201-204@llvmorg-23.1.0, "If FileCheck verifies that the file matches the expected contents, it exits with 0. Otherwise, if not, or if an error occurs, it will exit with a non-zero value", and measured on both hosts, exit code 1 and "error: CHECK: expected string not found in input"
+    confidence: observed
