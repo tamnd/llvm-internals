@@ -13,7 +13,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 
-import prosecheck  # noqa: E402
+import prosecheck
 
 LESSON = '''# ---
 # id: t04_the_pass_tape
@@ -95,7 +95,8 @@ class TestReadingALesson(unittest.TestCase):
     def test_a_fence_inside_a_markdown_cell_is_skipped(self):
         fenced = LESSON.replace(
             "# %%\n# This comment is code",
-            "# %% [markdown]\n# ```\n# just obviously simply\n# ```\n\n# %%\n# This comment is code",
+            "# %% [markdown]\n# ```\n# just obviously simply\n# ```\n"
+            "\n# %%\n# This comment is code",
         )
         self.assertEqual(prosecheck.check(write(fenced)), [])
 

@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from tools.excalidraw import FONT_CODE, Scene  # noqa: E402
+from tools.excalidraw import FONT_CODE, Scene
 
 OUT = Path(__file__).resolve().parent / "build-pipeline"
 

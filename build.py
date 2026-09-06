@@ -532,17 +532,29 @@ def cmd_run(args: argparse.Namespace) -> int:
     Outputs land in .build/ and are thrown away. Nothing executed here ever gets
     committed, because a committed notebook in this repository has no outputs.
     """
-    if shutil.which("jupyter") is None:
-        print("run: needs jupyter, try `uv run --with nbconvert --with ipykernel build.py run`")
-        return 1
-    failures = 0
+    todo = []
     for path in lesson_paths():
         lesson = load_lesson(path)
-        if args.only and lesson.id != args.only:
+        if args.only and lesson.id not in args.only:
+            continue
+        if lesson.id in args.skip:
+            print(f"run: {lesson.id} skipped, asked for by name")
             continue
         if lesson.env == "E1" and not args.include_e1:
             print(f"run: {lesson.id} is E1, skipping, pass --include-e1 to run it anyway")
             continue
+        todo.append(lesson)
+
+    # Asked for last, so that a run which turns out to have nothing to execute
+    # is not a missing dependency. `--skip` is how the CI job leaves out the one
+    # lesson that needs a tool it has not got, and on a machine where that is
+    # every lesson, the honest answer is that there was nothing to do.
+    if todo and shutil.which("jupyter") is None:
+        print("run: needs jupyter, try `uv run --with nbconvert --with ipykernel build.py run`")
+        return 1
+
+    failures = 0
+    for lesson in todo:
         notebook = NOTEBOOKS / lesson.id / "lesson.ipynb"
         outdir = ROOT / ".build" / lesson.id
         outdir.mkdir(parents=True, exist_ok=True)
@@ -629,7 +641,12 @@ def main(argv: list[str] | None = None) -> int:
     p.set_defaults(func=cmd_new)
 
     p = subs.add_parser("run", help="execute notebooks from a cold kernel")
-    p.add_argument("--only", help="one lesson id")
+    p.add_argument("--only", action="append", metavar="ID",
+                   help="a lesson id, repeatable")
+    # For the lesson that needs a tool this machine has not got. Naming it out
+    # loud beats a job that quietly runs fifteen of sixteen lessons.
+    p.add_argument("--skip", action="append", default=[], metavar="ID",
+                   help="a lesson id to leave out, repeatable")
     p.add_argument("--include-e1", action="store_true", help="also run lessons marked E1")
     p.add_argument("--timeout", type=int, default=600, help="seconds per cell")
     p.set_defaults(func=cmd_run)

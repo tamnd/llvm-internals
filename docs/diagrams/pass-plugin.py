@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from tools.excalidraw import FONT_CODE, FONT_SANS, Scene  # noqa: E402
+from tools.excalidraw import FONT_CODE, FONT_SANS, Scene
 
 OUT = Path(__file__).resolve().parent / "pass-plugin"
 
@@ -15,10 +15,13 @@ COLUMN = [40 + i * (BOX_W + GAP) for i in range(4)]
 
 
 def row(s, y, items, style):
-    for x, (key, text, font) in zip(COLUMN, items):
+    # Not strict: a row may be shorter than the four columns, and the boxes it
+    # does have belong on the left.
+    for x, (key, text, font) in zip(COLUMN, items, strict=False):
         s.box(key, x, y, BOX_W, BOX_H, text, style, font, 13)
     for i in range(3):
-        s.arrow(f"{items[i][0]}-a", (COLUMN[i] + BOX_W + 4, y + BOX_H / 2), (COLUMN[i + 1] - 6, y + BOX_H / 2))
+        s.arrow(f"{items[i][0]}-a", (COLUMN[i] + BOX_W + 4, y + BOX_H / 2),
+                (COLUMN[i + 1] - 6, y + BOX_H / 2))
 
 
 def main() -> None:
@@ -28,7 +31,8 @@ def main() -> None:
         "title",
         40,
         24,
-        "Both of these compile exactly the same PassInfoMixin class. The only difference is who compiles it.",
+        "Both of these compile exactly the same PassInfoMixin class. The only difference "
+        "is who compiles it.",
         size=14,
     )
 
@@ -49,7 +53,8 @@ def main() -> None:
         "in-note",
         40,
         206,
-        "Needs a real machine and an afternoon. This is the right way to send a patch upstream, and it does not fit in a notebook.",
+        "Needs a real machine and an afternoon. This is the right way to send a patch "
+        "upstream, and it does not fit in a notebook.",
         size=13,
     )
 

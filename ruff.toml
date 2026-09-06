@@ -1,0 +1,51 @@
+# What the linter is allowed to have an opinion about.
+#
+# A configuration file rather than a command line, because a lint that behaves
+# differently on your machine and in CI is worse than no lint. Without this file
+# ruff falls back to whatever configuration it finds above the repository, which
+# is somebody's home directory, and the answer changes per contributor.
+#
+# lessons/ and notebooks/ are excluded, and not because linting them would be
+# annoying. A lesson is percent format notebook source, not a Python module. It
+# is executed with `irx` already in the namespace, so every reference to it is
+# an undefined name; several lessons contain IPython cell magics like
+# `%%irxplug` followed by C++, which no Python parser can read at all; and the
+# markdown cells are prose with one paragraph per line. What checks a lesson is
+# `python3 build.py check`, which knows what a lesson is.
+
+# A floor rather than an exact version. The rule set below was chosen against
+# 0.16, and a ruff older than that does not have all of it, which would show up
+# as a lint that passes locally and fails in CI.
+required-version = ">=0.16"
+line-length = 100
+extend-exclude = ["lessons", "notebooks", ".build"]
+
+[lint]
+select = [
+  "E", "W",   # pycodestyle
+  "F",        # pyflakes
+  "I",        # import order
+  "UP",       # constructs that are older than the Python this repo requires
+  "B",        # bugbear
+  "SIM",      # simplifications
+  "C4",       # comprehensions
+  "RUF",      # ruff's own, including RUF100 for noqa comments that do nothing
+  "S",        # bandit
+]
+# This project's entire job is running other people's compilers, so a rule that
+# objects to `subprocess` on principle objects to the repository. Both of these
+# are about calling out to a binary, which happens on nearly every line of
+# toolkit/irx/proc.py by design. The paths involved come from docs/pin.json and
+# from the lesson, never from a network response.
+ignore = ["S603", "S607"]
+
+[lint.per-file-ignores]
+# assert is what a test is made of.
+"tests/*" = ["S101"]
+# The toolkit tests build command lines and cache paths as string fixtures, so
+# they are full of literal /tmp paths that are compared against rather than
+# opened, and of constants whose names read like secrets to a heuristic. E501 is
+# off for the same reason: several fixtures are verbatim `opt` output, one line
+# of which is 111 characters, and a fixture that has been reflowed to fit a
+# column limit is no longer evidence of anything.
+"toolkit/tests/*" = ["S101", "S105", "S108", "E501"]
